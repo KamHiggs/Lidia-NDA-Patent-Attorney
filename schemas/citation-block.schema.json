@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KamHiggs/Lidia-NDA-Patent-Attorney/schemas/citation-block.schema.json",
+  "title": "Citation Block Schema",
+  "description": "Structured citation for legal/regulatory authorities (statutes, cases, regulations, guidance)",
+  "type": "object",
+  "required": [
+    "authority_key",
+    "citation",
+    "source_url",
+    "pinpoint",
+    "retrieval_method",
+    "retrieval_date",
+    "confidence"
+  ],
+  "properties": {
+    "authority_key": {
+      "type": "string",
+      "enum": [
+        "STATUTE_USC",
+        "REGULATION_CFR",
+        "CASE_LAW",
+        "AGENCY_GUIDANCE",
+        "MPEP",
+        "TREATY_TEXT"
+      ],
+      "description": "Type of legal authority being cited"
+    },
+    "citation": {
+      "type": "string",
+      "description": "Full formal citation in appropriate format (Bluebook, official reporter, etc.)",
+      "examples": [
+        "35 U.S.C. § 102",
+        "37 CFR 1.53",
+        "Alice Corp. v. CLS Bank International, 573 U.S. 208 (2014)",
+        "LKQ Corp. v. GM Global Technology Operations LLC, 102 F.4th 1280 (Fed. Cir. 2024) (en banc)",
+        "MPEP § 2153.01"
+      ]
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Direct URL to the authoritative text",
+      "examples": [
+        "https://www.law.cornell.edu/uscode/text/35/102",
+        "https://www.law.cornell.edu/cfr/text/37/1.53",
+        "https://supreme.justia.com/cases/federal/us/573/208/",
+        "https://www.uspto.gov/web/offices/pac/mpep/s2153.html"
+      ]
+    },
+    "pinpoint": {
+      "type": "string",
+      "description": "Specific section, subsection, page, or paragraph cited",
+      "examples": [
+        "§ 102(b)(1)",
+        "(b)(1)(A)",
+        "slip op. at 23-25",
+        "573 U.S. at 217",
+        "§ 2153.01(a)"
+      ]
+    },
+    "retrieval_method": {
+      "type": "string",
+      "enum": [
+        "LIVE_FETCH_VERIFIED",
+        "USER_PROVIDED_SOURCE",
+        "MODEL_MEMORY_UNVERIFIED",
+        "UNKNOWN"
+      ],
+      "description": "Method used to obtain the citation"
+    },
+    "retrieval_date": {
+      "type": "string",
+      "pattern": "^(\\d{4}-\\d{2}-\\d{2}|UNKNOWN)$",
+      "description": "ISO 8601 date (YYYY-MM-DD) or 'UNKNOWN'",
+      "examples": ["2026-01-15", "UNKNOWN"]
+    },
+    "retrieval_proof": {
+      "type": "object",
+      "required": ["proof_type", "proof_payload"],
+      "properties": {
+        "proof_type": {
+          "type": "string",
+          "enum": [
+            "SOURCE_EXCERPT_UNDER_25_WORDS",
+            "PAGE_HASH",
+            "TOOL_FETCH_MARKER",
+            "MAP_EMBEDDED_SOURCE_POINTER",
+            "RUNTIME_TOOL_LIST",
+            "CONFIG_ECHO",
+            "RUNTIME_CAPABILITY_POINTER"
+          ]
+        },
+        "proof_payload": {
+          "type": "string"
+        }
+      },
+      "description": "Optional proof of retrieval (required if retrieval_method is LIVE_FETCH_VERIFIED)"
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "SPEC_OFFICIAL",
+        "FIELD_PRACTICE",
+        "INFERRED",
+        "HIGGS_STANDARD",
+        "DOC_CONFLICT"
+      ],
+      "description": "Epistemic confidence level"
+    },
+    "holding_summary": {
+      "type": "string",
+      "description": "Optional brief summary of the holding (for case law)"
+    }
+  },
+  "examples": [
+    {
+      "authority_key": "CASE_LAW",
+      "citation": "LKQ Corp. v. GM Global Technology Operations LLC, 102 F.4th 1280 (Fed. Cir. 2024) (en banc)",
+      "source_url": "https://cafc.uscourts.gov/opinions-orders/22-1029.OPINION.7-9-2024_2354808.pdf",
+      "pinpoint": "slip op. at 23-25",
+      "retrieval_method": "USER_PROVIDED_SOURCE",
+      "retrieval_date": "UNKNOWN",
+      "retrieval_proof": {
+        "proof_type": "MAP_EMBEDDED_SOURCE_POINTER",
+        "proof_payload": "MAP:static_authority_registry.authorities[CASE_LAW]"
+      },
+      "confidence": "SPEC_OFFICIAL",
+      "holding_summary": "Overruled Rosen-Durling test; design patent obviousness now uses Graham factors"
+    },
+    {
+      "authority_key": "STATUTE_USC",
+      "citation": "35 U.S.C. § 102",
+      "source_url": "https://www.law.cornell.edu/uscode/text/35/102",
+      "pinpoint": "§ 102(b)(1)",
+      "retrieval_method": "USER_PROVIDED_SOURCE",
+      "retrieval_date": "UNKNOWN",
+      "retrieval_proof": {
+        "proof_type": "MAP_EMBEDDED_SOURCE_POINTER",
+        "proof_payload": "MAP:static_authority_registry.authorities[STATUTE_USC]"
+      },
+      "confidence": "SPEC_OFFICIAL"
+    }
+  ]
+}

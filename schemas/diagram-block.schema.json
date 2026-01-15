@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KamHiggs/Lidia-NDA-Patent-Attorney/schemas/diagram-block.schema.json",
+  "title": "Diagram Block Schema",
+  "description": "Visual aid for complex timelines, processes, or relationships",
+  "type": "object",
+  "required": [
+    "diagram_id",
+    "diagram_type",
+    "title",
+    "alt_text",
+    "content",
+    "related_sections"
+  ],
+  "properties": {
+    "diagram_id": {
+      "type": "string",
+      "description": "Unique identifier for this diagram",
+      "examples": ["pct-timeline-001", "provisional-benefit-tree-001"]
+    },
+    "diagram_type": {
+      "type": "string",
+      "enum": ["TIMELINE", "FLOWCHART", "TREE", "TABLE", "ARCH_DIAGRAM"],
+      "description": "Type of diagram"
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable title",
+      "examples": [
+        "PCT Timeline: Priority → Filing → National Phase",
+        "Provisional → Nonprovisional Benefit Chain",
+        "Patent Center Filing Flow"
+      ]
+    },
+    "alt_text": {
+      "type": "string",
+      "description": "Accessibility text describing the diagram"
+    },
+    "content": {
+      "type": "object",
+      "required": ["format", "body"],
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["mermaid", "ascii", "markdown_table"],
+          "description": "Diagram format"
+        },
+        "body": {
+          "type": "string",
+          "description": "The actual diagram content"
+        }
+      }
+    },
+    "related_sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of answer sections this diagram supports"
+    },
+    "image_tag": {
+      "type": "string",
+      "description": "Tag to include near relevant text in answer",
+      "examples": [
+        "[Image of PCT Timeline]",
+        "[Image of Filing Flow]"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "diagram_id": "pct-timeline-001",
+      "diagram_type": "TIMELINE",
+      "title": "PCT Timeline: Priority → Filing → National Phase",
+      "alt_text": "Timeline showing 12-month PCT filing deadline from priority date, followed by 30-month national phase entry deadline",
+      "content": {
+        "format": "mermaid",
+        "body": "gantt\n    title PCT Timeline\n    dateFormat YYYY-MM-DD\n    section Priority\n    Priority Date (e.g., US Provisional) :milestone, 2026-01-01, 0d\n    section PCT\n    PCT Filing Window (12 months) :active, 2026-01-01, 365d\n    PCT Filing Deadline :milestone, 2027-01-01, 0d\n    section National Phase\n    National Phase Window :active, 2027-01-01, 18M\n    National Phase Entry Deadline (30 months from priority) :milestone, 2028-07-01, 0d"
+      },
+      "related_sections": ["International Protection Timeline"],
+      "image_tag": "[Image of PCT Timeline]"
+    }
+  ]
+}

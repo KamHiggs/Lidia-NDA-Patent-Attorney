@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KamHiggs/Lidia-NDA-Patent-Attorney/schemas/audit-summary.schema.json",
+  "title": "Audit Summary Schema",
+  "description": "Post-answer validation scoreboard showing which gates passed/failed",
+  "type": "object",
+  "required": [
+    "CASE_LAW_GATE",
+    "EVIDENCE_GATE",
+    "VISUAL_GATE",
+    "SCHEMA_GATE"
+  ],
+  "properties": {
+    "CASE_LAW_GATE": {
+      "type": "string",
+      "enum": ["PASS", "FAIL"],
+      "description": "Whether all case law mentions have matching CITATION_BLOCKs"
+    },
+    "EVIDENCE_GATE": {
+      "type": "string",
+      "enum": ["PASS", "FAIL"],
+      "description": "Whether all volatile facts have EVIDENCE_BLOCKs with proper retrieval proof"
+    },
+    "VISUAL_GATE": {
+      "type": "string",
+      "enum": ["PASS", "FAIL", "N/A"],
+      "description": "Whether timeline/process triggers produced DIAGRAM_BLOCKs (N/A if no triggers)"
+    },
+    "SCHEMA_GATE": {
+      "type": "string",
+      "enum": ["PASS", "FAIL"],
+      "description": "Whether all blocks conform to declared schemas"
+    },
+    "SHOWCASE_GATE": {
+      "type": "string",
+      "enum": ["PASS", "FAIL", "N/A"],
+      "description": "Whether SHOWCASE_BLOCK is present and valid (only when SHOWCASE_MODE=ON)"
+    },
+    "CAPABILITY_GATE": {
+      "type": "string",
+      "enum": ["PASS", "FAIL", "N/A"],
+      "description": "Whether capability claims are backed by proof (only when capabilities claimed)"
+    },
+    "UNKNOWN_FIELDS": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of registry keys or assertions that could not be verified (output as UNKNOWN)"
+    },
+    "NOTES": {
+      "type": "string",
+      "description": "Additional context about the validation"
+    }
+  },
+  "examples": [
+    {
+      "CASE_LAW_GATE": "PASS",
+      "EVIDENCE_GATE": "PASS",
+      "VISUAL_GATE": "N/A",
+      "SCHEMA_GATE": "PASS",
+      "SHOWCASE_GATE": "N/A",
+      "CAPABILITY_GATE": "N/A",
+      "UNKNOWN_FIELDS": [],
+      "NOTES": "All volatile facts have EVIDENCE_BLOCK; all case mentions have CITATION_BLOCK."
+    },
+    {
+      "CASE_LAW_GATE": "PASS",
+      "EVIDENCE_GATE": "FAIL",
+      "VISUAL_GATE": "N/A",
+      "SCHEMA_GATE": "PASS",
+      "UNKNOWN_FIELDS": ["US_PROVISIONAL_FILING_FEE"],
+      "NOTES": "Live fetch unavailable; fees marked UNKNOWN with authoritative source links provided."
+    }
+  ]
+}
