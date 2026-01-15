@@ -1,9 +1,9 @@
-# CogniMaps: A Runtime-Enforced Evidence Protocol for Reducing AI Hallucination in High-Stakes Domains
+# CogniMaps: Structured Evidence Enforcement for LLM Outputs in High-Stakes Domains
 
 **Authors:** Kamden Higgs & Higgs AI (Solara)
-**Version:** 1.0
+**Version:** 0.1 (Preliminary Work)
 **Date:** January 2026
-**Status:** Production-Ready System
+**Status:** Experimental / Seeking Feedback
 
 ---
 
@@ -11,15 +11,15 @@
 
 Large Language Models (LLMs) exhibit a persistent problem in high-stakes domains: they confidently generate plausible but unverified facts, fabricate legal citations, and provide answers without provenance. This "hallucination" problem is particularly dangerous in domains where incorrect information can lead to legal liability, financial loss, or patient harm—such as patent law, medical guidance, and financial compliance.
 
-We present **CogniMaps**, a novel runtime validation system that enforces structured evidence requirements before LLM outputs reach end users. By implementing a **dual-registry architecture** (volatile facts + legal authorities), **fail-closed validation gates**, and **mandatory provenance proofs**, CogniMaps reduce hallucination risk while maintaining natural language fluency.
+We present **CogniMaps**, a structured approach to enforcing evidence requirements in LLM outputs through runtime validation. By implementing a **dual-registry architecture** (volatile facts + legal authorities), **fail-closed validation gates**, and **mandatory provenance schemas**, CogniMaps attempt to reduce hallucination risk while maintaining natural language fluency.
 
-**Key Results:**
-- 100% citation compliance for legal authorities (vs. ~40% baseline)
-- Zero fabricated retrieval dates (vs. frequent synthetic timestamps in baseline)
-- Structured audit trails with source URLs and retrieval proofs
-- Automatic diagram generation for complex timelines and processes
+**Initial Observations (n=15 questions, Gemini 2.0 Flash):**
+- Structured citation blocks for all legal authorities (vs. scattered inline citations in baseline)
+- Explicit UNKNOWN markers when evidence unavailable (vs. potentially outdated values from model memory)
+- Machine-readable audit trails with source URLs and retrieval metadata
+- Enforced schema compliance through post-answer validation
 
-This paper describes the architecture, validation pipeline, and real-world deployment of CogniMaps in the patent law domain, with applications to medical, financial, and regulatory contexts.
+This paper describes the architecture, validation pipeline, and preliminary evaluation of CogniMaps in the US patent law domain. We discuss limitations, threats to validity, and future work needed to validate this approach across models and domains.
 
 ---
 
@@ -59,9 +59,35 @@ In high-stakes domains, these failures have real consequences:
 
 ---
 
-## 2. CogniMaps Architecture
+## 2. Related Work
 
-### 2.1 Core Concept
+### 2.1 Retrieval-Augmented Generation (RAG)
+
+RAG systems (Lewis et al., 2020) augment LLM prompts with retrieved documents to ground outputs in source material. While effective for many tasks, RAG does not enforce that the LLM actually uses the retrieved context, nor does it guarantee structured provenance in outputs. CogniMaps complement RAG by adding post-answer validation.
+
+### 2.2 Structured Output & Function Calling
+
+OpenAI's function calling and JSON mode (OpenAI, 2023) allow LLMs to produce structured outputs. Similarly, Anthropic's tool use enables structured interactions. CogniMaps build on this work by defining domain-specific schemas (EVIDENCE_BLOCK, CITATION_BLOCK) and enforcing their presence through validation gates.
+
+### 2.3 Constitutional AI & RLHF
+
+Anthropic's Constitutional AI (Bai et al., 2022) trains models to follow principles through self-critique and RLHF. This shapes model behavior at training time. CogniMaps operate at inference time, providing a complementary layer of enforcement independent of model training.
+
+### 2.4 AI Safety & Factuality
+
+Recent work on LLM factuality (Min et al., 2023; Gao et al., 2023) focuses on improving model accuracy through better training data, fact-checking modules, or uncertainty quantification. CogniMaps take a different approach: instead of trying to make the model more accurate, we enforce that every factual claim includes verifiable provenance.
+
+### 2.5 Legal Tech & AI
+
+Prior work on AI for legal applications (Katz et al., 2023) has explored document analysis, case retrieval, and legal reasoning. However, systems designed for practitioner use in high-stakes contexts remain rare. CogniMaps focus specifically on the provenance and auditability requirements of professional legal workflows.
+
+**Our Contribution:** CogniMaps combine structured output schemas with domain-specific validation gates and fail-closed enforcement to create auditable LLM outputs suitable for high-stakes domains. This is an incremental contribution building on structured output work, with novel application to legal provenance requirements.
+
+---
+
+## 3. CogniMaps Architecture
+
+### 3.1 Core Concept
 
 A **CogniMap** is a structured JSON specification that defines:
 
@@ -72,7 +98,7 @@ A **CogniMap** is a structured JSON specification that defines:
 
 The CogniMap is **injected into the LLM prompt** as structured context, and the system **validates outputs before delivery**.
 
-### 2.2 Dual-Registry Architecture
+### 3.2 Dual-Registry Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -103,7 +129,7 @@ The CogniMap is **injected into the LLM prompt** as structured context, and the 
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 2.3 Fail-Closed Enforcement
+### 3.3 Fail-Closed Enforcement
 
 **Key Principle:** If evidence cannot be proven, output **UNKNOWN** with authoritative links.
 
@@ -386,51 +412,159 @@ While this paper focuses on patent law, the CogniMap architecture is domain-agno
 
 ---
 
-## 9. Limitations and Future Work
+## 9. Limitations and Threats to Validity
 
-### 9.1 Current Limitations
+This is preliminary work with significant limitations. We discuss these honestly to invite critique and guide future research.
 
-1. **Live Fetch Dependency:** For truly current data, the runtime must have web access (not all LLM platforms support this)
-2. **Gate Tuning:** Trigger keywords may need domain-specific tuning to avoid false positives/negatives
-3. **User Experience:** Structured blocks add verbosity; READER mode mitigates but doesn't eliminate
-4. **Multi-Turn Conversations:** Current implementation is single-query; chat history complicates validation
+### 9.1 Small Sample Size and Statistical Rigor
 
-### 9.2 Future Directions
+**Limitation:** Our evaluation consisted of only **15 questions** on a **single model** (Gemini 2.0 Flash Experimental).
 
-**Automated CogniMap Generation:**
-- Use LLMs to draft initial variable/authority registries from domain documents
-- Human review + validation before deployment
+**Implications:**
+- Claims like "100% citation compliance" are not statistically meaningful with n=15
+- No significance testing performed
+- No confidence intervals calculated
+- Single-model evaluation cannot establish generalizability
 
-**Real-Time Evidence Updates:**
-- Periodic background jobs to refresh variable data (fees, portal status)
-- Cache recent fetches to reduce latency
+**What's Needed:**
+- Multi-model testing (GPT-4, Claude, Llama, etc.) with n>100 per model
+- Statistical hypothesis testing (e.g., McNemar's test for paired categorical data)
+- Cross-domain validation (medical, financial, software)
+- Inter-rater reliability assessment if human evaluation is involved
 
-**Interactive Diagram Generation:**
-- Convert DIAGRAM_BLOCK Mermaid syntax to rendered images
-- Allow users to export/edit diagrams
+### 9.2 Prompt Engineering Confound
 
-**Multi-Agent Validation:**
-- Use separate "validator" LLM to audit primary LLM outputs
-- Adversarial setup: generator vs. validator
+**Threat:** The "with CogniMap" condition includes a complex structured prompt (~30-50KB). The baseline condition uses a simple question.
 
-**Cross-Domain CogniMap Libraries:**
-- Build marketplace of verified CogniMaps
-- Community contributions + expert review
+**Implications:**
+- Improvement may be due to better prompting rather than validation gates
+- We have not performed an ablation study to isolate the effect of individual components (dual registry, gates, schemas)
+- Prompt length alone may improve performance (more context → better answers)
+
+**What's Needed:**
+- Ablation study: Remove one component at a time (e.g., gates only, schemas only)
+- Matched prompt lengths (control for token count)
+- Systematic prompt variation to measure sensitivity
+
+### 9.3 Ground Truth Uncertainty
+
+**Critical Issue:** The USPTO fee discrepancy ($60 vs. $65 in our test) reveals a fundamental problem: **we lack verified ground truth for most claims.**
+
+**Implications:**
+- Our "LIVE_FETCH_VERIFIED" assumes the fetched page is authoritative, but web pages can be:
+  - Outdated (cached versions)
+  - Draft versions (not final regulations)
+  - Incorrectly interpreted by the LLM
+- We cannot definitively say which version ($60 or $65) is correct without manual verification
+- This applies to all "EVIDENCE_BLOCK" data: retrieval_date != ground_truth_date
+
+**What's Needed:**
+- Manual verification of a sample of claims against authoritative sources
+- Ground truth dataset construction by domain experts
+- Explicit uncertainty quantification (e.g., "retrieved from X on Y, but not independently verified")
+
+### 9.4 Single Domain Evaluation
+
+**Limitation:** This work evaluates only US patent law. Claims about applicability to medical, financial, or software domains are **hypothetical** and not validated.
+
+**Implications:**
+- Different domains may have different validation requirements
+- Variable data registry structure may not generalize
+- Gate trigger keywords are domain-specific
+
+**What's Needed:**
+- Independent evaluation in at least 2-3 other high-stakes domains
+- Domain expert review of CogniMap specifications
+- Cross-domain comparison of gate effectiveness
+
+### 9.5 Live Fetch Dependency and Operational Burden
+
+**Limitation:** For current data, the runtime must have web access and fetch capability. Many LLM platforms do not support this.
+
+**Implications:**
+- In production, "UNKNOWN" will be common, reducing utility
+- Maintenance burden: CogniMaps require quarterly updates
+- Fast-moving regulatory environments may outpace manual updates
+
+**What's Needed:**
+- Automated monitoring of source pages for changes
+- Version control and diff tracking for variable data
+- Fallback strategies when live fetch is unavailable
+
+### 9.6 User Experience and Verbosity
+
+**Limitation:** Structured blocks add ~10-20% response tokens. In long documents, this compounds.
+
+**Implications:**
+- Users may find outputs too verbose or technical
+- Copy-paste workflows may be disrupted (blocks are JSON, not prose)
+- Mobile/small-screen experiences may suffer
+
+**What's Needed:**
+- User studies with target audiences (attorneys, engineers, clinicians)
+- A/B testing of presentation formats (READER vs. AUDIT mode)
+- UI/UX design for collapsible audit trails
+
+### 9.7 No Adversarial Testing
+
+**Limitation:** We have not tested whether a motivated user could craft queries that bypass validation gates.
+
+**Implications:**
+- Gates may have blind spots (e.g., case law mentioned without trigger keywords)
+- Regex-based detection can be evaded with paraphrasing
+- System may fail on novel query patterns
+
+**What's Needed:**
+- Red-team exercises to find gate bypass techniques
+- Adversarial prompt injection testing
+- Robustness evaluation against query variations
+
+### 9.8 Lack of Baseline Comparison
+
+**Limitation:** We compare "with CogniMap" to "without CogniMap" using the same base model. We do not compare to other hallucination-reduction techniques (RAG, fine-tuning, chain-of-thought, etc.).
+
+**Implications:**
+- Cannot claim CogniMaps are "better" than alternatives
+- May be combining with RAG or other techniques in production
+
+**What's Needed:**
+- Head-to-head comparison with RAG systems
+- Comparison with models fine-tuned on legal data
+- Combined approach evaluation (CogniMap + RAG)
+
+### 9.9 Future Work
+
+**Short Term (3-6 months):**
+- Expand evaluation to n=100+ questions across 3+ models
+- Perform ablation study to isolate component effects
+- Manual ground truth verification for a sample of claims
+
+**Medium Term (6-12 months):**
+- Validate in 2-3 additional domains (medical, financial)
+- User studies with target practitioners
+- Automated CogniMap generation from domain documents
+
+**Long Term (12+ months):**
+- Multi-agent validation architecture (generator + validator)
+- Real-time monitoring and automated updates
+- Community-contributed CogniMap library
 
 ---
 
 ## 10. Conclusion
 
-Large Language Models are powerful knowledge synthesizers, but their tendency to hallucinate facts and fabricate sources makes them unsuitable for high-stakes domains without additional safeguards. **CogniMaps** provide a structured, enforceable protocol for ensuring LLM outputs include:
+Large Language Models are powerful knowledge synthesizers, but their tendency to hallucinate facts and fabricate sources makes them unsuitable for high-stakes domains without additional safeguards. We present **CogniMaps**, a structured approach to enforcing evidence requirements in LLM outputs through:
 
-1. **Provenance:** Every volatile fact traced to a source with retrieval proof
-2. **Citations:** Every legal/regulatory assertion linked to an authoritative document
-3. **Transparency:** Explicit UNKNOWN when evidence is unavailable
-4. **Auditability:** Machine-readable blocks for validation and record-keeping
+1. **Provenance schemas:** Volatile facts require EVIDENCE_BLOCK with retrieval metadata
+2. **Citation enforcement:** Legal authorities require CITATION_BLOCK with source URLs
+3. **Fail-closed defaults:** Missing evidence → explicit UNKNOWN + authoritative links
+4. **Post-answer validation:** Regex-based gate enforcement before output delivery
 
-Our real-world deployment in patent law demonstrates that CogniMaps can **eliminate fabricated retrieval dates**, **enforce 100% citation compliance**, and **provide structured audit trails**—all while preserving the fluency and utility of natural language responses.
+In preliminary testing (n=15 questions, Gemini 2.0 Flash), CogniMaps produced structured audit trails and explicit UNKNOWN markers when evidence was unavailable, while the baseline condition provided unstructured inline citations and no provenance metadata.
 
-As LLMs become embedded in professional workflows (legal research, medical decision support, financial compliance), systems like CogniMaps will be essential for maintaining trust, accountability, and safety.
+**This is early work with significant limitations** (see §9). We lack statistical rigor (n=15), have not performed ablation studies, have not verified ground truth for most claims, and have only evaluated one model in one domain. We present this work to invite critique and collaboration.
+
+If the approach proves robust under broader evaluation, systems like CogniMaps may contribute to making LLM outputs more auditable in professional workflows where provenance and accountability matter. We welcome feedback from the research community and domain practitioners.
 
 ---
 

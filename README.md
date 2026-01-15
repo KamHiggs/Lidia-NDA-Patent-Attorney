@@ -1,14 +1,31 @@
-# CogniMap System: Evidence-Based AI for High-Stakes Domains
+# CogniMap System: Structured Evidence Enforcement for LLM Outputs
 
-**Transform LLMs from "confident but unverifiable" to "confident AND auditable"**
+**Preliminary work on enforcing provenance requirements in high-stakes AI applications**
 
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)](./License)
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-green.svg)]()
-[![Domain](https://img.shields.io/badge/Domain-Patent%20Law%20%2B%20NDAs-blue.svg)]()
+[![Status](https://img.shields.io/badge/Status-Experimental-yellow.svg)]()
+[![Feedback](https://img.shields.io/badge/Feedback-Welcome-blue.svg)]()
 
 ---
 
-## 🎯 The Problem
+> **⚠️ Early Work / Seeking Feedback**
+>
+> This is a preliminary prototype demonstrating structured provenance enforcement for LLM outputs in legal domains. Our evaluation consisted of **15 questions on one model** (Gemini 2.0 Flash). Broader validation across models, domains, and sample sizes is needed before production use.
+>
+> **Key Limitations:**
+> - Small sample size (n=15, no statistical testing)
+> - Single model evaluation (Gemini only)
+> - No ablation study (improvement may be due to prompting, not validation gates)
+> - No ground truth verification (e.g., USPTO fee discrepancy remains unresolved)
+> - Single domain (US patent law only)
+>
+> See [§9 of the whitepaper](./docs/whitepaper.md#9-limitations-and-threats-to-validity) for full discussion of limitations and threats to validity.
+>
+> **We welcome critique, collaboration, and feedback from researchers and practitioners.**
+
+---
+
+## The Problem
 
 Large Language Models hallucinate facts in high-stakes domains:
 
@@ -27,7 +44,7 @@ Large Language Models hallucinate facts in high-stakes domains:
 
 ---
 
-## 💡 The Solution: CogniMaps
+## The Approach: CogniMaps
 
 A **CogniMap** is a structured JSON runtime specification that:
 
@@ -67,28 +84,29 @@ A **CogniMap** is a structured JSON runtime specification that:
 
 ---
 
-## 🔬 Proven Results
+## Initial Observations
 
 **Test:** 15 patent law questions (fees, timelines, case law, NDAs)
 **Model:** Gemini 2.0 Flash Experimental
 **Date:** January 2026
+**Status:** Preliminary / Not statistically validated
 
-| Metric | Without CogniMap | With CogniMap | Improvement |
+| Metric | Without CogniMap | With CogniMap | Observation |
 |--------|-----------------|---------------|-------------|
-| **Structured Evidence Blocks** | 0 | 4 | ✅ +4 |
-| **Structured Citation Blocks** | 0 | 6 | ✅ +6 |
-| **Case Law Citation Compliance** | ~60% (inline) | 100% (structured) | ✅ +40% |
-| **Fabricated Retrieval Dates** | 0 | 0 | ✅ Maintained |
-| **Audit Transparency** | None | AUDIT_SUMMARY | ✅ Full visibility |
-| **Fail-Closed Enforcement** | No | Yes (UNKNOWN + sources) | ✅ Safety |
+| **Structured Evidence Blocks** | 0 | 4 | Structured provenance present |
+| **Structured Citation Blocks** | 0 | 6 | Structured citations present |
+| **Case Law Citation Format** | Inline footnotes | Structured blocks | Different format |
+| **Fabricated Retrieval Dates** | 0 | 0 | Both avoided fabrication |
+| **Audit Transparency** | None | AUDIT_SUMMARY | Validation gates visible |
+| **Fail-Closed Enforcement** | No | Yes (UNKNOWN + sources) | Explicit UNKNOWN when unavailable |
 
-**Key Finding:** CogniMap adds **structured provenance** without reducing content quality.
+**Initial Finding:** CogniMap produced structured provenance blocks that baseline did not. However, n=15 is insufficient for statistical claims. Broader evaluation needed.
 
 📊 [Full Test Results & Analysis](./examples/comparison-analysis.md)
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
 ```
 Lidia-NDA-Patent-Attorney/
@@ -115,7 +133,7 @@ Lidia-NDA-Patent-Attorney/
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### **1. Review the Evidence**
 
@@ -175,7 +193,7 @@ Lidia-NDA-Patent-Attorney/
 
 ---
 
-## 🎓 Key Innovations
+## Key Contributions
 
 ### **1. Dual-Registry Architecture**
 
@@ -225,7 +243,7 @@ A: UNKNOWN (live fetch unavailable)
 
 ---
 
-## 🌍 Domain Applicability
+## Domain Applicability
 
 While this repository focuses on **patent law**, the architecture is domain-agnostic:
 
@@ -240,23 +258,25 @@ While this repository focuses on **patent law**, the architecture is domain-agno
 
 ---
 
-## 📊 Real-World Impact
+## Potential Impact
 
-### **Before CogniMap (Typical LLM Output):**
-- ⚠️ User asks: "What's the provisional filing fee?"
-- 🤖 LLM: "$60 for micro entities" [no source, possibly outdated]
-- ❌ User files with wrong fee → payment rejected → delays
+### **Hypothetical Scenario (Illustrative):**
 
-### **With CogniMap:**
-- ✅ User asks: "What's the provisional filing fee?"
-- 🤖 LLM: "$65 for micro entities (retrieved 2026-01-15 from USPTO Fee Schedule: [link])"
-- ✅ User clicks link, verifies, files correctly
+**Without structured provenance:**
+- User asks: "What's the provisional filing fee?"
+- LLM: "$60 for micro entities" [no source, from model memory]
+- User cannot verify → may be outdated
 
-**Result:** Reduced filing errors, fewer deadline mistakes, improved trust in AI-assisted workflows.
+**With CogniMap approach:**
+- User asks: "What's the provisional filing fee?"
+- LLM: "$65 for micro entities" + EVIDENCE_BLOCK with source URL and retrieval date
+- User can click source link to verify
+
+**Note:** This is a hypothetical illustration. Real-world impact depends on deployment context, user behavior, and whether the approach proves robust under broader evaluation.
 
 ---
 
-## 🏗️ Technical Details
+## Technical Details
 
 ### **Computational Overhead**
 
@@ -295,7 +315,7 @@ While this repository focuses on **patent law**, the architecture is domain-agno
 
 ---
 
-## 🔐 What's Public vs. Private?
+## What's Public vs. Private
 
 ### ✅ **Public (This Repository):**
 - Whitepaper and architecture documentation
@@ -405,26 +425,22 @@ Special thanks to:
 
 ---
 
-## 📝 Changelog
+## Changelog
 
-### **v1.0.0** (January 2026)
-- 🎉 Initial public release
-- ✅ Patent law CogniMap (provisional filing focus)
-- ✅ Test suite with 15 questions
-- ✅ Comparison analysis (with vs. without)
-- ✅ Full whitepaper
-- ✅ JSON schemas for all blocks
-
----
-
-**⚖️ Disclaimer:** This system is not legal advice. For high-stakes filings, consult a licensed attorney. CogniMaps improve AI output structure and provenance but do not replace professional judgment.
+### **v0.1** (January 2026)
+- Initial public release (experimental)
+- Patent law domain (provisional filing focus)
+- Test suite with 15 questions (preliminary evaluation)
+- Comparison analysis (with vs. without CogniMap)
+- Whitepaper with limitations discussion
+- JSON schemas for evidence/citation/audit blocks
 
 ---
 
-<div align="center">
+**Disclaimer:** This system is not legal advice. For high-stakes filings, consult a licensed attorney. CogniMaps are an experimental approach to structured LLM outputs and do not replace professional judgment.
 
-**Built with ❤️ for high-stakes AI applications**
+---
 
-[Whitepaper](./docs/whitepaper.md) • [Schemas](./schemas/) • [Test Results](./examples/comparison-analysis.md)
+**Documentation:** [Whitepaper](./docs/whitepaper.md) • [Schemas](./schemas/) • [Test Results](./examples/comparison-analysis.md)
 
-</div>
+**Feedback:** We welcome critique and collaboration. Please open an issue or reach out directly.
