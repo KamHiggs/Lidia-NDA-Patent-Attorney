@@ -1,0 +1,992 @@
+{
+  "issues_registry": {
+    "total_issues": 412,
+    "last_updated": "2026-01-26",
+    "categorization": {
+      "critical_security": 5,
+      "critical_stability": 8,
+      "high_stability": 18,
+      "high_performance": 8,
+      "critical_data_integrity": 6,
+      "architecture_flaws": 12,
+      "operational_challenges": 25,
+      "scalability_limitations": 8,
+      "channel_specific": 15,
+      "provider_specific": 10,
+      "other": 297
+    },
+    "CRITICAL_STABILITY_ISSUES": {
+      "I_2359": {
+        "title": "Unhandled undici promise rejections crash gateway during network blips",
+        "severity": "CRITICAL",
+        "class": "STABILITY",
+        "category": "Gateway Crashes",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2359",
+        "status": "OPEN",
+        "symptoms": [
+          "Gateway process terminates during brief network interruptions",
+          "UnhandledPromiseRejectionWarning in logs",
+          "Service requires manual restart",
+          "Happens during WiFi handoffs or VPN reconnections"
+        ],
+        "root_cause": "Unhandled promise rejections in undici HTTP library during transient network issues. Missing .catch() handlers on fetch operations.",
+        "impact": "UNACCEPTABLE for production - Service completely unavailable during minor network hiccups",
+        "detection": [
+          "Monitor: process exit code",
+          "Log: UnhandledPromiseRejection",
+          "Alert: gateway_uptime < expected"
+        ],
+        "immediate_mitigation": [
+          "Use process manager (PM2, systemd) with automatic restart",
+          "Set process.on('unhandledRejection') handler to log but not crash",
+          "Wrap all fetch calls in try-catch"
+        ],
+        "permanent_fix": "P4:network_resilience",
+        "production_impact": "Frequent outages in real-world network conditions. Unacceptable SLA.",
+        "user_reports": "Multiple users report hourly crashes",
+        "related_issues": ["I_2272", "I_2369"],
+        "priority": "P0 - MUST FIX before production deployment"
+      },
+      "I_2272": {
+        "title": "Gateway crashes on transient network failures (unhandled fetch rejection)",
+        "severity": "CRITICAL",
+        "class": "STABILITY",
+        "category": "Gateway Crashes",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2272",
+        "status": "OPEN",
+        "symptoms": [
+          "Gateway crashes when provider API temporarily unavailable",
+          "No retry attempt, immediate crash",
+          "Temporary DNS resolution failures cause termination"
+        ],
+        "root_cause": "Lack of retry logic and error recovery for temporary network failures. Assumes network is always available.",
+        "impact": "Service terminates on temporary issues instead of recovering. Violates basic reliability requirements.",
+        "immediate_mitigation": [
+          "Implement retry with exponential backoff",
+          "Add circuit breaker for repeated failures",
+          "Queue messages during network unavailability"
+        ],
+        "permanent_fix": "P4:network_resilience",
+        "production_impact": "Cannot maintain uptime SLA. Requires 24/7 monitoring and manual restarts.",
+        "priority": "P0"
+      },
+      "I_2369": {
+        "title": "Add network resilience for unhandled fetch failures",
+        "severity": "CRITICAL",
+        "class": "STABILITY",
+        "category": "Gateway Crashes",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2369",
+        "status": "OPEN",
+        "symptoms": [
+          "Unhandled network fetch failures cause service disruptions"
+        ],
+        "root_cause": "Missing error handling for network fetch operations across the codebase",
+        "impact": "Production instability; service interruptions during network issues",
+        "permanent_fix": "P4:network_resilience",
+        "priority": "P0"
+      },
+      "I_2365": {
+        "title": "Session lock not released on API failure",
+        "severity": "CRITICAL",
+        "class": "RESOURCE_LEAK",
+        "category": "Resource Management",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2365",
+        "status": "OPEN",
+        "symptoms": [
+          "Session becomes permanently locked after API errors",
+          "Future operations blocked with 'session locked' error",
+          "Requires manual cleanup or restart",
+          "Accumulates over time as errors occur"
+        ],
+        "root_cause": "Lock release logic missing in error handling paths. No finally blocks to ensure cleanup.",
+        "impact": "Sessions become permanently locked; requires manual cleanup; resource leaks accumulate",
+        "detection": [
+          "Monitor: locked_sessions_count",
+          "Alert: locked_sessions > 5",
+          "Log: 'Failed to acquire lock' errors"
+        ],
+        "immediate_mitigation": [
+          "Add finally blocks to all lock acquisition code",
+          "Implement lock timeout (force release after 60s)",
+          "Periodic cleanup job to release stale locks"
+        ],
+        "permanent_fix": "P5:resource_leak_prevention",
+        "production_impact": "System becomes progressively unusable. Requires periodic restarts.",
+        "priority": "P0"
+      },
+      "I_1812": {
+        "title": "Deadlock between cron timer lock and agent tool calls",
+        "severity": "CRITICAL",
+        "class": "DEADLOCK",
+        "category": "Concurrency",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1812",
+        "status": "OPEN",
+        "symptoms": [
+          "System completely hangs when cron and agent operations overlap",
+          "No progress, high CPU usage",
+          "Requires process kill to recover",
+          "Unpredictable occurrence"
+        ],
+        "root_cause": "Lock ordering issue causing mutual blocking. Cron acquires lock A then B; agent acquires lock B then A.",
+        "impact": "Complete system hang; requires process restart; unpredictable occurrence makes it dangerous",
+        "detection": [
+          "Monitor: lock_wait_time > 30s",
+          "Alert: no requests processed in 60s",
+          "Detect: circular lock dependency graph"
+        ],
+        "immediate_mitigation": [
+          "Add lock timeout with automatic release",
+          "Deadlock detection and recovery (break deadlock by releasing youngest lock)",
+          "Avoid overlapping cron and agent operations"
+        ],
+        "permanent_fix": "P11:deadlock_resolution",
+        "production_impact": "Random complete service outages. Unacceptable for production.",
+        "priority": "P0"
+      },
+      "I_1862": {
+        "title": "Messages lost during gateway restart (race condition)",
+        "severity": "CRITICAL",
+        "class": "DATA_LOSS",
+        "category": "Data Integrity",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1862",
+        "status": "OPEN",
+        "symptoms": [
+          "Messages sent during restart window disappear",
+          "No error shown to user",
+          "Message acknowledged but never processed"
+        ],
+        "root_cause": "Race condition during gateway shutdown/startup transition. Messages accepted but not persisted.",
+        "impact": "MESSAGE LOSS - Zero-downtime deployments not possible; violates data durability guarantees",
+        "detection": [
+          "Monitor: message_in vs message_processed count",
+          "Alert: discrepancy > 0",
+          "Audit: message delivery confirmation"
+        ],
+        "immediate_mitigation": [
+          "Planned maintenance windows only",
+          "Drain connections before restart",
+          "User notification of maintenance window"
+        ],
+        "permanent_fix": "P12:message_loss_prevention",
+        "production_impact": "Cannot meet enterprise data durability requirements. Unacceptable for production.",
+        "priority": "P0"
+      },
+      "I_788": {
+        "title": "Messages/responses leak between providers (crosstalk)",
+        "severity": "CRITICAL",
+        "class": "SECURITY_PRIVACY",
+        "category": "Privacy Breach",
+        "url": "https://github.com/clawdbot/clawdbot/issues/788",
+        "status": "OPEN",
+        "symptoms": [
+          "Responses from wrong provider appear in conversation",
+          "Session data appears in wrong conversation",
+          "Model uses wrong persona/context",
+          "User reports seeing other users' data"
+        ],
+        "root_cause": "Weak session→provider binding. Routing logic can incorrectly associate sessions with wrong provider.",
+        "impact": "PRIVACY BREACH - Trust violation, potential regulatory violation (GDPR, HIPAA)",
+        "detection": [
+          "Audit log: provider_id mismatch between request and response",
+          "Canary tests: send test messages, verify provider isolation",
+          "User reports of wrong responses"
+        ],
+        "immediate_mitigation": [
+          "Hard pin provider per session (no switching mid-session)",
+          "Add session isolation validation checks",
+          "Enable comprehensive audit logging"
+        ],
+        "permanent_fix": "P1:provider_session_binding",
+        "production_impact": "BLOCKER for enterprise and regulated industries. Unacceptable privacy risk.",
+        "priority": "P0"
+      },
+      "I_1826": {
+        "title": "Synthetic tool_result for terminated tool_use causes all subsequent requests to fail",
+        "severity": "CRITICAL",
+        "class": "STABILITY",
+        "category": "Tool System",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1826",
+        "status": "OPEN",
+        "symptoms": [
+          "Tool execution terminated",
+          "All subsequent API requests fail with validation errors",
+          "Session becomes unusable",
+          "User must start new session"
+        ],
+        "root_cause": "Invalid synthetic tool results break API message format. Repair mechanism creates malformed messages.",
+        "impact": "Session becomes unusable after tool termination; requires restart",
+        "immediate_mitigation": [
+          "Avoid synthetic tool results",
+          "Better tool timeout handling",
+          "Validate repaired messages before sending"
+        ],
+        "permanent_fix": "P14:context_management_overhaul",
+        "production_impact": "Severe impact on user workflows. Tool failures cascade to session failures.",
+        "priority": "P0"
+      }
+    },
+    "HIGH_STABILITY_ISSUES": {
+      "I_2271": {
+        "title": "Images >5MB cause infinite retry loop and block session completely",
+        "severity": "HIGH",
+        "class": "PERFORMANCE_STABILITY",
+        "category": "Media Handling",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2271",
+        "status": "OPEN",
+        "symptoms": [
+          "Large image upload triggers infinite retry loop",
+          "Session completely blocked, no further messages processed",
+          "High CPU usage",
+          "Requires restart to recover"
+        ],
+        "root_cause": "Lack of image size validation and retry circuit breaker. No maximum retry limit.",
+        "impact": "Session completely blocked; users cannot continue work; requires manual restart",
+        "detection": [
+          "Monitor: retry_count > 10",
+          "Alert: same message retrying",
+          "Log: image size in bytes"
+        ],
+        "immediate_mitigation": [
+          "Add max file size limit (5MB)",
+          "Implement circuit breaker (max 3 retries)",
+          "Reject oversized images with clear error message"
+        ],
+        "permanent_fix": "Add file size validation + circuit breaker pattern",
+        "production_impact": "User frustration, session unavailability",
+        "priority": "P1"
+      },
+      "I_2244": {
+        "title": "Gateway crashes on systems with hostname > 63 bytes (mDNS label limit)",
+        "severity": "HIGH",
+        "class": "STABILITY",
+        "category": "Platform Compatibility",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2244",
+        "status": "OPEN",
+        "symptoms": [
+          "Gateway fails to start on systems with long hostnames",
+          "Error: hostname exceeds mDNS label limit",
+          "Common in enterprise environments with FQDN hostnames"
+        ],
+        "root_cause": "No validation of hostname length against mDNS 63-byte label limit",
+        "impact": "Gateway cannot start on systems with long hostnames",
+        "immediate_mitigation": [
+          "Truncate hostname to 63 bytes",
+          "Use short hostname instead of FQDN",
+          "Allow manual hostname override in config"
+        ],
+        "permanent_fix": "Add hostname validation and truncation",
+        "production_impact": "Deployment failures in enterprise environments with naming conventions",
+        "priority": "P1"
+      },
+      "I_2199": {
+        "title": "WhatsApp gateway crashes when receiving audio messages",
+        "severity": "HIGH",
+        "class": "STABILITY",
+        "category": "Channel - WhatsApp",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2199",
+        "status": "OPEN",
+        "symptoms": [
+          "Gateway crashes when WhatsApp audio message received",
+          "Service outage until restart",
+          "Audio messages not handled properly"
+        ],
+        "root_cause": "Improper audio message handling in WhatsApp integration. Missing audio format support.",
+        "impact": "WhatsApp channel unreliable; service outages when users send audio",
+        "immediate_mitigation": [
+          "Add try-catch around audio message handling",
+          "Skip audio messages with warning",
+          "Add audio format validation"
+        ],
+        "permanent_fix": "Proper audio message support or graceful rejection",
+        "production_impact": "WhatsApp channel unusable for users who send audio",
+        "priority": "P1"
+      },
+      "I_1952": {
+        "title": "WhatsApp group inbound messages stop working after gateway restart",
+        "severity": "HIGH",
+        "class": "STABILITY",
+        "category": "Channel - WhatsApp",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1952",
+        "status": "OPEN",
+        "symptoms": [
+          "WhatsApp group messages not received after restart",
+          "Direct messages work fine",
+          "Requires manual re-subscription to groups"
+        ],
+        "root_cause": "State not properly restored after restart for WhatsApp group subscriptions",
+        "impact": "Group messaging breaks after every service restart; disrupts business continuity",
+        "immediate_mitigation": [
+          "Persist group subscriptions to disk",
+          "Re-subscribe to all groups on startup",
+          "Monitor for missing messages"
+        ],
+        "permanent_fix": "Proper state persistence and restoration",
+        "production_impact": "Requires manual intervention after every restart",
+        "priority": "P1"
+      },
+      "I_1825": {
+        "title": "Telegram: Messages lost when Heartbeat and User message arrive simultaneously",
+        "severity": "HIGH",
+        "class": "DATA_LOSS",
+        "category": "Channel - Telegram",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1825",
+        "status": "OPEN",
+        "symptoms": [
+          "User messages disappear when heartbeat occurs simultaneously",
+          "No error or acknowledgment",
+          "User doesn't know message was lost"
+        ],
+        "root_cause": "Race condition in message handling with partial streaming mode. Heartbeat overwrites user message.",
+        "impact": "MESSAGE LOSS - Unacceptable for production; damages user trust",
+        "immediate_mitigation": [
+          "Disable partial streaming mode",
+          "Queue messages serially",
+          "Add message acknowledgment"
+        ],
+        "permanent_fix": "Fix race condition in message handling",
+        "production_impact": "Random message loss erodes user trust",
+        "priority": "P1"
+      },
+      "I_1894": {
+        "title": "One-shot systemEvent cron job gets stuck in infinite firing loop",
+        "severity": "HIGH",
+        "class": "STABILITY",
+        "category": "Cron System",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1894",
+        "status": "OPEN",
+        "symptoms": [
+          "Cron job scheduled for one-time execution fires repeatedly",
+          "Resource waste",
+          "Duplicate notifications/actions",
+          "Potential rate limit violations"
+        ],
+        "root_cause": "One-time execution flag not properly enforced. Job not removed after completion.",
+        "impact": "Scheduled tasks execute repeatedly instead of once; can cause notification spam and resource waste",
+        "immediate_mitigation": [
+          "Manually delete one-shot jobs after execution",
+          "Add execution count limit",
+          "Monitor for repeated executions"
+        ],
+        "permanent_fix": "Proper one-shot job lifecycle management",
+        "production_impact": "Automation unreliable; can violate rate limits; notification spam",
+        "priority": "P1"
+      },
+      "I_1947": {
+        "title": "Scheduled tasks do not fire",
+        "severity": "HIGH",
+        "class": "STABILITY",
+        "category": "Cron System",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1947",
+        "status": "OPEN",
+        "symptoms": [
+          "Cron jobs scheduled but never execute",
+          "No errors in logs",
+          "Silent failure"
+        ],
+        "root_cause": "Cron scheduling mechanism failure. Timer not properly registered.",
+        "impact": "Scheduled tasks completely non-functional; breaks automation workflows",
+        "immediate_mitigation": [
+          "Restart gateway to re-register cron jobs",
+          "Manually trigger jobs",
+          "Add cron execution monitoring"
+        ],
+        "permanent_fix": "Fix cron scheduling mechanism",
+        "production_impact": "Automation capabilities broken; critical for production workflows",
+        "priority": "P1"
+      },
+      "I_2323": {
+        "title": "Cronjob with WhatsApp does not work",
+        "severity": "HIGH",
+        "class": "STABILITY",
+        "category": "Cron + Channel Integration",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2323",
+        "status": "OPEN",
+        "symptoms": [
+          "Cron jobs fail when targeting WhatsApp channel",
+          "Other channels work fine",
+          "No clear error message"
+        ],
+        "root_cause": "Integration issue between cron system and WhatsApp channel. Channel not available in cron context.",
+        "impact": "Cannot schedule WhatsApp messages or automations; blocks automated notifications",
+        "immediate_mitigation": [
+          "Use webhook to trigger WhatsApp messages",
+          "Manual message sending",
+          "Use different channel for automation"
+        ],
+        "permanent_fix": "Fix channel availability in cron context",
+        "production_impact": "Blocks automated notifications and scheduled communications",
+        "priority": "P1"
+      },
+      "I_2277": {
+        "title": "Cron tool times out from agent sessions",
+        "severity": "HIGH",
+        "class": "STABILITY",
+        "category": "Cron System",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2277",
+        "status": "OPEN",
+        "symptoms": [
+          "Cron operations timeout when called from agent sessions",
+          "Same operations work when accessed directly via SSH",
+          "Timeout is 30s, too short for some operations"
+        ],
+        "root_cause": "Timeout configuration mismatch between agent sessions and direct access. Agent has shorter timeout.",
+        "impact": "Cron automation unreliable from agent context; requires manual intervention",
+        "immediate_mitigation": [
+          "Increase agent session timeout",
+          "Use direct SSH access for long-running cron operations",
+          "Split long operations into smaller chunks"
+        ],
+        "permanent_fix": "Unified timeout configuration across access methods",
+        "production_impact": "Automated scheduling unreliable",
+        "priority": "P1"
+      },
+      "I_2262": {
+        "title": "Gateway stops processing messages after orphaned user message cleanup",
+        "severity": "HIGH",
+        "class": "STABILITY",
+        "category": "Message Processing",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2262",
+        "status": "OPEN",
+        "symptoms": [
+          "Gateway becomes unresponsive after maintenance operations",
+          "Cleanup routine triggers service hang",
+          "Requires restart to recover"
+        ],
+        "root_cause": "Cleanup routine has side effects that halt message processing. Likely lock not released or state corrupted.",
+        "impact": "Service outage requiring manual restart; message loss during downtime",
+        "immediate_mitigation": [
+          "Disable orphaned message cleanup",
+          "Perform cleanup during maintenance windows",
+          "Add monitoring for message processing"
+        ],
+        "permanent_fix": "Fix cleanup routine to not impact message processing",
+        "production_impact": "Maintenance operations cause service outages",
+        "priority": "P1"
+      },
+      "I_1951": {
+        "title": "Session file lock persists after SIGUSR1 restart",
+        "severity": "HIGH",
+        "class": "RESOURCE_LEAK",
+        "category": "Resource Management",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1951",
+        "status": "OPEN",
+        "symptoms": [
+          "Session locks remain after graceful restart",
+          "New instance cannot access sessions",
+          "Requires manual lock cleanup"
+        ],
+        "root_cause": "Lock cleanup not executed during SIGUSR1 graceful restart handler",
+        "impact": "Cannot perform graceful restarts; requires manual lock cleanup",
+        "immediate_mitigation": [
+          "Kill process instead of SIGUSR1",
+          "Manual lock cleanup before restart",
+          "Use different restart mechanism"
+        ],
+        "permanent_fix": "P5:resource_leak_prevention",
+        "production_impact": "Zero-downtime restarts not possible",
+        "priority": "P1"
+      }
+    },
+    "SECURITY_ISSUES": {
+      "I_2321": {
+        "title": "security audit: warn when API keys appear in auth profile names",
+        "severity": "HIGH",
+        "class": "SECURITY",
+        "category": "Credential Exposure",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2321",
+        "status": "OPEN",
+        "symptoms": [
+          "API keys visible in profile names",
+          "Keys exposed in logs, backups, config files",
+          "No warning to user"
+        ],
+        "root_cause": "Lack of validation and security checks for credential exposure in configuration",
+        "impact": "API keys can be inadvertently exposed, leading to credential leakage",
+        "immediate_mitigation": [
+          "Scan config for exposed credentials",
+          "Warn user when detected",
+          "Offer to move to secure storage"
+        ],
+        "permanent_fix": "P3:credential_exposure_prevention",
+        "production_impact": "Enterprise compliance violations; security risk",
+        "priority": "P0"
+      },
+      "I_2320": {
+        "title": "security audit --fix: offer to extract hardcoded secrets to .env",
+        "severity": "HIGH",
+        "class": "SECURITY",
+        "category": "Credential Exposure",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2320",
+        "status": "OPEN",
+        "symptoms": [
+          "Hardcoded credentials in config files",
+          "Secrets committed to version control",
+          "No automated detection or remediation"
+        ],
+        "root_cause": "No automated detection or remediation for hardcoded credentials",
+        "impact": "Hardcoded secrets can be committed to git, exposed in backups, leaked through logs",
+        "immediate_mitigation": [
+          "Manual audit of config files",
+          "Move secrets to .env files",
+          "Add .env to .gitignore"
+        ],
+        "permanent_fix": "P3:credential_exposure_prevention",
+        "production_impact": "Critical risk for enterprise; violates security best practices",
+        "priority": "P0"
+      },
+      "I_2341": {
+        "title": "Support running gateway as isolated system user",
+        "severity": "HIGH",
+        "class": "SECURITY",
+        "category": "Privilege Escalation Risk",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2341",
+        "status": "OPEN",
+        "symptoms": [
+          "Gateway must run as personal user account",
+          "Cannot use dedicated service account",
+          "Violates principle of least privilege"
+        ],
+        "root_cause": "Gateway architecture requires personal user execution; no support for system service accounts",
+        "impact": "Excessive privileges increase attack surface; violates enterprise security policies",
+        "immediate_mitigation": [
+          "Run in restricted user account",
+          "Use AppArmor/SELinux profiles",
+          "Minimize user permissions"
+        ],
+        "permanent_fix": "P16:system_user_support",
+        "production_impact": "Blocks secure enterprise deployments",
+        "priority": "P1"
+      },
+      "I_2149": {
+        "title": "Add rate limiting to webhook endpoints",
+        "severity": "MEDIUM",
+        "class": "SECURITY",
+        "category": "DoS Prevention",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2149",
+        "status": "OPEN",
+        "symptoms": [
+          "Webhooks can be called unlimited times",
+          "Vulnerable to abuse and DoS",
+          "No throttling mechanism"
+        ],
+        "root_cause": "Webhook endpoints lack rate limiting protection",
+        "impact": "Vulnerable to abuse, DoS attacks, and resource exhaustion",
+        "immediate_mitigation": [
+          "Add rate limiting middleware",
+          "Implement IP-based throttling",
+          "Add webhook authentication"
+        ],
+        "permanent_fix": "Implement comprehensive rate limiting",
+        "production_impact": "Susceptible to service disruption through webhook abuse",
+        "priority": "P1"
+      },
+      "I_834": {
+        "title": "WhatsApp pairing message sent to contacts (safety)",
+        "severity": "CRITICAL",
+        "class": "SAFETY",
+        "category": "Unintended Outbound",
+        "url": "https://github.com/clawdbot/clawdbot/issues/834",
+        "status": "OPEN",
+        "symptoms": [
+          "Unintended messages sent to WhatsApp contacts during pairing",
+          "No consent from user",
+          "Reputation damage"
+        ],
+        "root_cause": "No safety mode during onboarding; immediate outbound access",
+        "impact": "Unintended outbound messages damage user reputation and trust",
+        "immediate_mitigation": [
+          "Enable read-only pairing mode",
+          "Require explicit allowlist for first send",
+          "Add dry-run pairing option"
+        ],
+        "permanent_fix": "Safe pairing workflow with explicit confirmation",
+        "production_impact": "Trust violation; user complaints; platform bans",
+        "priority": "P0"
+      }
+    },
+    "ENTERPRISE_BLOCKERS": {
+      "I_1568": {
+        "title": "PostgreSQL + pgvector backend for memory (alternative to SQLite)",
+        "severity": "HIGH",
+        "class": "SCALABILITY",
+        "category": "Database",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1568",
+        "status": "OPEN",
+        "impact": "BLOCKER - Current SQLite backend doesn't scale for enterprise workloads",
+        "root_cause": "SQLite limitations for multi-user and large-scale deployments. No connection pooling, limited concurrency.",
+        "immediate_mitigation": [
+          "Use separate SQLite databases per tenant",
+          "Implement external caching layer",
+          "Schedule regular database maintenance"
+        ],
+        "permanent_fix": "P7:postgresql_backend",
+        "production_impact": "Cannot support multiple concurrent users or large data volumes; blocks enterprise adoption",
+        "priority": "P1"
+      },
+      "I_1797": {
+        "title": "GitHub Copilot Enterprise accounts fail with HTTP 421 Misdirected Request",
+        "severity": "CRITICAL",
+        "class": "ENTERPRISE_INTEGRATION",
+        "category": "Provider Integration",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1797",
+        "status": "OPEN",
+        "impact": "BLOCKER - Enterprise Copilot users cannot connect",
+        "root_cause": "Enterprise Copilot endpoint routing incompatibility. Using wrong API endpoint for enterprise accounts.",
+        "immediate_mitigation": [
+          "Use personal Copilot accounts as workaround",
+          "Switch to different provider for enterprise users"
+        ],
+        "permanent_fix": "P9:enterprise_integrations",
+        "production_impact": "Blocks enterprise customers with Copilot licenses; major adoption barrier",
+        "priority": "P0"
+      },
+      "I_2332": {
+        "title": "tool_use_id mismatch error with custom providers (e.g., Azure-hosted Claude)",
+        "severity": "HIGH",
+        "class": "ENTERPRISE_INTEGRATION",
+        "category": "Provider Integration",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2332",
+        "status": "OPEN",
+        "impact": "BLOCKER - Azure-hosted Claude and custom providers cannot use tools",
+        "root_cause": "Tool ID generation not compatible with custom API providers. ID format differs from native API.",
+        "immediate_mitigation": [
+          "Use native Anthropic API instead of Azure",
+          "Disable tools for Azure-hosted models"
+        ],
+        "permanent_fix": "P9:enterprise_integrations",
+        "production_impact": "Enterprise deployments using Azure OpenAI or custom endpoints cannot use core functionality",
+        "priority": "P1"
+      },
+      "I_1950": {
+        "title": "Support fully non-interactive Docker deployment (headless/Dokploy)",
+        "severity": "HIGH",
+        "class": "OPERATIONS",
+        "category": "Deployment",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1950",
+        "status": "OPEN",
+        "impact": "BLOCKER - Cannot perform headless/automated Docker deployments",
+        "root_cause": "Deployment requires interactive prompts; blocks automation",
+        "immediate_mitigation": [
+          "Pre-create config file before deployment",
+          "Use expect scripts to automate prompts",
+          "Manual configuration steps in runbook"
+        ],
+        "permanent_fix": "P10:noninteractive_deployment",
+        "production_impact": "Blocks automated CI/CD pipelines; prevents containerized production deployments",
+        "priority": "P1"
+      },
+      "I_2102": {
+        "title": "HTTP_PROXY is ignored",
+        "severity": "MEDIUM",
+        "class": "OPERATIONS",
+        "category": "Network Configuration",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2102",
+        "status": "OPEN",
+        "impact": "BLOCKER - Cannot deploy in corporate networks requiring proxies",
+        "root_cause": "Proxy environment variables not respected; no proxy configuration support",
+        "immediate_mitigation": [
+          "Deploy outside corporate network",
+          "Use VPN to bypass proxy",
+          "Configure transparent proxy at network level"
+        ],
+        "permanent_fix": "P17:proxy_support",
+        "production_impact": "Blocks deployment in most corporate networks",
+        "priority": "P1"
+      }
+    },
+    "PERFORMANCE_ISSUES": {
+      "I_1808": {
+        "title": "Tool output bloat in sessions.jsonl",
+        "severity": "HIGH",
+        "class": "PERFORMANCE",
+        "category": "Storage",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1808",
+        "status": "OPEN",
+        "symptoms": [
+          "Rapid session store growth (>1GB/day)",
+          "Slow read/write operations",
+          "Compaction failures",
+          "Out-of-disk crashes"
+        ],
+        "root_cause": "Large tool outputs stored inline in JSONL; no size limits",
+        "impact": "Storage explosion, performance degradation, service crashes",
+        "immediate_mitigation": [
+          "Set max_bytes_per_tool_output = 16384",
+          "Enable aggressive compaction",
+          "Move old sessions to archive storage"
+        ],
+        "permanent_fix": "P2:artifact_storage_cas",
+        "production_impact": "Unsustainable storage costs; service instability",
+        "priority": "P0"
+      },
+      "I_2276": {
+        "title": "Mac Companion App causes high CPU usage",
+        "severity": "HIGH",
+        "class": "PERFORMANCE",
+        "category": "Client Application",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2276",
+        "status": "OPEN",
+        "symptoms": [
+          "Excessive CPU consumption during gateway connections",
+          "Battery drain on laptops",
+          "System slowdown",
+          "Fan noise"
+        ],
+        "root_cause": "Inefficient gateway connection handling or resource polling. Likely polling instead of event-driven.",
+        "impact": "Poor user experience; battery drain; resource contention",
+        "immediate_mitigation": [
+          "Increase polling interval",
+          "Close companion app when not needed",
+          "Use web interface instead"
+        ],
+        "permanent_fix": "Optimize connection handling; use WebSocket events instead of polling",
+        "production_impact": "Poor desktop user experience",
+        "priority": "P1"
+      },
+      "I_2273": {
+        "title": "CLI node runner: stale exec-approvals.sock causes ~8s latency",
+        "severity": "HIGH",
+        "class": "PERFORMANCE",
+        "category": "CLI Performance",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2273",
+        "status": "OPEN",
+        "symptoms": [
+          "8-second delay on every system.run command",
+          "Happens after restart or crash",
+          "Stale socket file not cleaned up"
+        ],
+        "root_cause": "Orphaned socket files not cleaned up properly; no timeout for socket connection attempts",
+        "impact": "Severely degraded performance for automation and scripting",
+        "immediate_mitigation": [
+          "Manually delete stale socket files before operations",
+          "Add socket connection timeout (1s)",
+          "Clean up sockets on startup"
+        ],
+        "permanent_fix": "Proper socket cleanup and connection timeout",
+        "production_impact": "Makes CLI tools unusable for time-sensitive operations",
+        "priority": "P1"
+      },
+      "I_1938": {
+        "title": "Most PRs FAIL: CI checks-macos tests fail with JavaScript heap out of memory",
+        "severity": "HIGH",
+        "class": "PERFORMANCE",
+        "category": "Testing Infrastructure",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1938",
+        "status": "OPEN",
+        "symptoms": [
+          "CI pipeline failures on macOS",
+          "JavaScript heap out of memory errors",
+          "Blocks development and releases"
+        ],
+        "root_cause": "Memory-intensive test suite exceeds Node.js heap limits",
+        "impact": "Development velocity severely impacted; quality gates broken",
+        "immediate_mitigation": [
+          "Increase Node.js heap size for CI",
+          "Split tests into smaller batches",
+          "Skip macOS tests temporarily"
+        ],
+        "permanent_fix": "Optimize test suite memory usage",
+        "production_impact": "Slower releases; reduced code quality",
+        "priority": "P1"
+      },
+      "I_2304": {
+        "title": "Keeps forgetting what it's working on",
+        "severity": "HIGH",
+        "class": "PERFORMANCE",
+        "category": "Context Management",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2304",
+        "status": "OPEN",
+        "symptoms": [
+          "Loss of conversation context during extended interactions",
+          "Agent forgets previous decisions",
+          "Users must repeat information"
+        ],
+        "root_cause": "Context window limitations force premature history truncation. Aggressive compaction.",
+        "impact": "Poor user experience in production; reduces effectiveness for complex tasks",
+        "immediate_mitigation": [
+          "Summarize key information frequently",
+          "Use explicit reminders",
+          "Reduce conversation length"
+        ],
+        "permanent_fix": "P14:context_management_overhaul",
+        "production_impact": "Frustrating user experience; limits usefulness for complex work",
+        "priority": "P1"
+      }
+    },
+    "ARCHITECTURE_ISSUES": {
+      "I_2335": {
+        "title": "Context truncation can cause tool_use_id mismatch errors",
+        "severity": "HIGH",
+        "class": "ARCHITECTURE",
+        "category": "Context Management",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2335",
+        "status": "OPEN",
+        "symptoms": [
+          "Tool operations fail after context pruning",
+          "tool_use_id not found errors",
+          "Long conversations become unstable"
+        ],
+        "root_cause": "Context compaction doesn't maintain tool call reference integrity. IDs lost during truncation.",
+        "impact": "Tool functionality breaks unpredictably in long conversations",
+        "immediate_mitigation": [
+          "Start new session for complex tasks",
+          "Avoid long conversations with many tool calls",
+          "Manually track important information"
+        ],
+        "permanent_fix": "P14:context_management_overhaul",
+        "production_impact": "Long conversations become unstable; limits platform usefulness",
+        "priority": "P1"
+      },
+      "I_2250": {
+        "title": "Synthetic tool_result for transcript repair causes API errors",
+        "severity": "HIGH",
+        "class": "ARCHITECTURE",
+        "category": "Error Recovery",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2250",
+        "status": "OPEN",
+        "symptoms": [
+          "Transcript repair creates invalid API messages",
+          "API rejects repaired messages",
+          "Session corruption during recovery attempts"
+        ],
+        "root_cause": "Repair mechanism creates invalid API message structure. Synthetic results don't match API requirements.",
+        "impact": "Session corruption during recovery attempts; unreliable error recovery",
+        "immediate_mitigation": [
+          "Avoid triggering repair (don't mix compaction and tools)",
+          "Start fresh session on errors",
+          "Disable automatic repair"
+        ],
+        "permanent_fix": "P14:context_management_overhaul",
+        "production_impact": "Error recovery makes things worse; reduces reliability",
+        "priority": "P1"
+      },
+      "I_2127": {
+        "title": "Critical: Main session context limits break heartbeat/monitoring system",
+        "severity": "CRITICAL",
+        "class": "ARCHITECTURE",
+        "category": "Monitoring",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2127",
+        "status": "OPEN",
+        "symptoms": [
+          "Heartbeat fails when session context fills up",
+          "Monitoring stops working",
+          "No health visibility for long-running sessions"
+        ],
+        "root_cause": "Monitoring system shares context limits with user sessions. No isolation.",
+        "impact": "Loss of system health visibility; monitoring unreliable for long sessions",
+        "immediate_mitigation": [
+          "Restart sessions periodically to clear context",
+          "External monitoring system",
+          "Separate monitoring session"
+        ],
+        "permanent_fix": "P14:context_management_overhaul (monitoring isolation)",
+        "production_impact": "Cannot monitor long-running production sessions",
+        "priority": "P0"
+      },
+      "I_1159": {
+        "title": "Parallel Session Processing",
+        "severity": "HIGH",
+        "class": "SCALABILITY",
+        "category": "Architecture",
+        "url": "https://github.com/clawdbot/clawdbot/issues/1159",
+        "status": "OPEN",
+        "impact": "BLOCKER - Cannot process multiple sessions concurrently",
+        "root_cause": "Sequential session processing limits throughput. Single-threaded architecture.",
+        "immediate_mitigation": [
+          "Scale horizontally with multiple gateway instances",
+          "Use queue-based load balancing",
+          "Increase per-session timeout"
+        ],
+        "permanent_fix": "P15:parallel_sessions",
+        "production_impact": "Poor performance under load; cannot scale to serve multiple users efficiently",
+        "priority": "P1"
+      }
+    },
+    "OPERATIONAL_ISSUES": {
+      "I_2367": {
+        "title": "node install generates LaunchAgent plist with invalid 'node start' subcommand",
+        "severity": "HIGH",
+        "class": "OPERATIONS",
+        "category": "Installation",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2367",
+        "status": "OPEN",
+        "symptoms": [
+          "macOS service installation creates non-functional daemon",
+          "Service doesn't auto-start",
+          "launchctl errors"
+        ],
+        "root_cause": "Installation script generates incorrect service configuration. Wrong command in plist.",
+        "impact": "macOS deployments fail; service doesn't auto-start; requires manual fixes",
+        "immediate_mitigation": [
+          "Manually edit plist file",
+          "Use correct command",
+          "Reload launchctl"
+        ],
+        "permanent_fix": "Fix installation script to generate correct plist",
+        "production_impact": "macOS deployments broken; poor user experience",
+        "priority": "P1"
+      },
+      "I_2349": {
+        "title": "clawdhub: Missing undici dependency after global install",
+        "severity": "HIGH",
+        "class": "OPERATIONS",
+        "category": "Installation",
+        "url": "https://github.com/clawdbot/clawdbot/issues/2349",
+        "status": "OPEN",
+        "symptoms": [
+          "Global npm install missing critical dependency",
+          "Module not found errors on startup",
+          "Installation appears successful but doesn't work"
+        ],
+        "root_cause": "Dependency not properly bundled or declared for global installations",
+        "impact": "Installation failures; poor first-user experience",
+        "immediate_mitigation": [
+          "Local install instead of global",
+          "Manually install missing dependency",
+          "Use different installation method"
+        ],
+        "permanent_fix": "Fix dependency bundling for global installs",
+        "production_impact": "First-time user experience terrible; high abandonment rate",
+        "priority": "P1"
+      }
+    },
+    "summary_other_categories": {
+      "channel_specific_issues_count": 15,
+      "examples": [
+        "I_2331: WhatsApp: Cannot receive messages from groups",
+        "I_2361: Slack: Only first file attachment passed to agent",
+        "I_2162: Telegram: streaming duplicates message then deletes it",
+        "I_1811: Telegram media group may lose images",
+        "I_2019: iMessage groupPolicy='disabled' not blocking",
+        "I_1649: iMessage self-chat creates echo loop"
+      ],
+      "provider_specific_issues_count": 10,
+      "examples": [
+        "I_2275: Ollama provider not working",
+        "I_2315: Venice AI provider returns empty responses",
+        "I_1955: Gemini 429 failover not handled",
+        "I_2233: Gemini CLI Login does not work",
+        "I_1695: Not working with LMStudio",
+        "I_2176: Zai provider crashes subagents"
+      ],
+      "browser_automation_issues_count": 5,
+      "examples": [
+        "I_1935: Chrome extension relay: Playwright operations fail with 'tab not found'",
+        "I_1674: Chrome Browser Relay: snapshots fail with 'tab not found'",
+        "I_2309: Browser tool output leaks to Telegram channel during execution"
+      ],
+      "windows_platform_issues_count": 6,
+      "examples": [
+        "I_1963: Plugin install fails on Windows: spawn npm ENOENT",
+        "I_2172: Windows skill detection fails - hardcodes 'which' instead of 'where'",
+        "I_2256: session-memory hook fails on Windows: ESM dynamic import path handling"
+      ],
+      "docker_deployment_issues_count": 5,
+      "examples": [
+        "I_1768: Minimal Docker builds fail: plugins.slots.memory: plugin not found",
+        "I_2178: improve Docker setup",
+        "I_2284: disconnected (1008): pairing required (deploy in WSL Docker)"
+      ]
+    }
+  }
+}

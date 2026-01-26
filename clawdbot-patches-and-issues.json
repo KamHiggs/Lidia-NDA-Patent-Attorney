@@ -1,0 +1,693 @@
+{
+  "patches_registry": {
+    "P0_CRITICAL_PATCHES": [
+      "P1:provider_session_binding",
+      "P2:artifact_storage_cas",
+      "P3:credential_exposure_prevention",
+      "P4:network_resilience",
+      "P5:resource_leak_prevention",
+      "P12:message_loss_prevention",
+      "P13:enterprise_monitoring"
+    ],
+    "P1:provider_session_binding": {
+      "type": "SECURITY_HARDENING",
+      "priority": "P0_CRITICAL",
+      "status": "DESIGN_COMPLETE",
+      "change": "Cryptographic session↔provider binding to prevent cross-provider crosstalk",
+      "rationale": "Prevents I_788 privacy breaches with cryptographic guarantees",
+      "fixes_issues": ["I_788"],
+      "implementation_spec": {
+        "algorithm": "HMAC-SHA256",
+        "key_derivation": "HKDF-SHA256(master_secret, salt=session_id, info='clawdbot/provider-bind/v1')",
+        "fingerprint": "provider_fingerprint = HMAC(derived_key, provider_config_digest || session_id)",
+        "storage": "Store alongside session metadata",
+        "validation": "Recompute and validate on every routing decision"
+      },
+      "evidence": ["I_788", "RFC_5869", "FIPS_198_1"],
+      "acceptance_tests": [
+        "AT_P1_1: Session with provider A cannot be routed to provider B",
+        "AT_P1_2: Fingerprint mismatch triggers fail-closed behavior",
+        "AT_P1_3: Key rotation invalidates old sessions"
+      ],
+      "estimated_effort": "2 engineer-weeks",
+      "security_impact": "Eliminates provider crosstalk risk"
+    },
+    "P2:artifact_storage_cas": {
+      "type": "PERFORMANCE_SECURITY",
+      "priority": "P0_CRITICAL",
+      "status": "DESIGN_COMPLETE",
+      "change": "Content-addressed artifact storage with deduplication to prevent session bloat",
+      "rationale": "Solves I_1808 storage explosion and I_2254 compaction failures",
+      "fixes_issues": ["I_1808", "I_2254"],
+      "implementation_spec": {
+        "threshold": "Outputs >16KB use artifact storage",
+        "addressing": "sha256(content) as artifact_id",
+        "storage": "~/.clawdbot/artifacts/{sha256}",
+        "index": "SQLite for metadata + bloom filter for existence",
+        "compression": "Zstd with tool-specific dictionaries",
+        "eviction": "LRU with configurable retention (7d hot, 30d warm)"
+      },
+      "evidence": ["I_1808", "I_2254"],
+      "acceptance_tests": [
+        "AT_P2_1: 1MB tool output stores as 200B reference",
+        "AT_P2_2: Identical outputs deduplicate to single artifact",
+        "AT_P2_3: Eviction maintains referential integrity"
+      ],
+      "estimated_effort": "3 engineer-weeks",
+      "performance_impact": "Reduces session size 60-95% for tool-heavy workflows"
+    },
+    "P3:credential_exposure_prevention": {
+      "type": "SECURITY_HARDENING",
+      "priority": "P0_CRITICAL",
+      "status": "DESIGN_COMPLETE",
+      "change": "Automated detection and remediation of exposed credentials in configuration",
+      "rationale": "Prevents I_2321 and I_2320 credential leakage in logs, configs, version control",
+      "fixes_issues": ["I_2321", "I_2320"],
+      "implementation_spec": {
+        "detection": {
+          "scan_targets": ["profile names", "config files", "logs", "error messages"],
+          "patterns": [
+            "API keys (sk-*, pk-*)",
+            "OAuth tokens (bearer tokens)",
+            "Passwords in plain text",
+            "Private keys (-----BEGIN)"
+          ],
+          "algorithm": "Entropy analysis + pattern matching"
+        },
+        "remediation": {
+          "automated": "Offer to extract to .env file",
+          "guidance": "Show secure configuration example",
+          "validation": "Verify no secrets in config after fix"
+        },
+        "prevention": {
+          "pre_commit_hook": "Scan for secrets before git commit",
+          "config_validation": "Reject configs with detected secrets",
+          "error_sanitization": "Redact secrets from error messages"
+        }
+      },
+      "evidence": ["I_2321", "I_2320"],
+      "acceptance_tests": [
+        "AT_P3_1: Detect API key in profile name",
+        "AT_P3_2: Auto-extract hardcoded secret to .env",
+        "AT_P3_3: Pre-commit hook blocks secret commits"
+      ],
+      "estimated_effort": "1.5 engineer-weeks",
+      "security_impact": "Prevents credential exposure in multiple attack surfaces"
+    },
+    "P4:network_resilience": {
+      "type": "STABILITY",
+      "priority": "P0_CRITICAL",
+      "status": "DESIGN_COMPLETE",
+      "change": "Comprehensive network error handling with exponential backoff and circuit breakers",
+      "rationale": "Fixes I_2359, I_2272, I_2369 gateway crashes on network failures - currently blocks production use",
+      "fixes_issues": ["I_2359", "I_2272", "I_2369"],
+      "implementation_spec": {
+        "error_handling": {
+          "catch_all_unhandled_rejections": "Global promise rejection handler",
+          "wrap_all_fetch_calls": "Retry wrapper with exponential backoff",
+          "timeout_configuration": "Per-operation timeout with configurable defaults"
+        },
+        "retry_strategy": {
+          "algorithm": "Exponential backoff with jitter",
+          "max_retries": 3,
+          "initial_delay": "100ms",
+          "max_delay": "5s",
+          "jitter": "±25%"
+        },
+        "circuit_breaker": {
+          "failure_threshold": "5 consecutive failures",
+          "timeout": "30 seconds",
+          "half_open_test": "Single request after timeout"
+        },
+        "graceful_degradation": {
+          "queue_messages": "During network issues",
+          "show_user_status": "Network unavailable, retrying",
+          "log_for_debugging": "Full error details for ops team"
+        }
+      },
+      "evidence": ["I_2359", "I_2272", "I_2369"],
+      "acceptance_tests": [
+        "AT_P4_1: Gateway survives 60s network outage",
+        "AT_P4_2: No crashes on transient DNS failures",
+        "AT_P4_3: Circuit breaker prevents cascade failures",
+        "AT_P4_4: Messages queued and delivered after recovery"
+      ],
+      "estimated_effort": "2 engineer-weeks",
+      "stability_impact": "CRITICAL - Eliminates #1 cause of production failures"
+    },
+    "P5:resource_leak_prevention": {
+      "type": "STABILITY",
+      "priority": "P0_CRITICAL",
+      "status": "DESIGN_COMPLETE",
+      "change": "Comprehensive resource management with leak detection and automatic cleanup",
+      "rationale": "Fixes I_2365, I_1951, I_1812 resource leaks that cause system hangs",
+      "fixes_issues": ["I_2365", "I_1951", "I_1812"],
+      "implementation_spec": {
+        "lock_management": {
+          "timeout_all_locks": "Maximum lock hold time: 30s",
+          "finally_blocks": "Ensure lock release in all code paths",
+          "deadlock_detection": "Monitor lock acquisition order",
+          "automatic_recovery": "Force release stale locks >60s old"
+        },
+        "file_handle_tracking": {
+          "register_all_opens": "Track in global registry",
+          "ensure_close": "Automatic close on process exit",
+          "leak_detection": "Alert on >100 open handles",
+          "periodic_cleanup": "Close orphaned handles every 5min"
+        },
+        "graceful_restart": {
+          "sigusr1_handler": "Proper cleanup before restart",
+          "drain_connections": "Wait for in-flight operations",
+          "release_all_resources": "Systematic resource release",
+          "checkpoint_state": "Save state before shutdown"
+        },
+        "monitoring": {
+          "track_lock_metrics": "Count, duration, contention",
+          "file_handle_count": "Current open handles",
+          "alert_on_leaks": "When metrics exceed thresholds"
+        }
+      },
+      "evidence": ["I_2365", "I_1951", "I_1812"],
+      "acceptance_tests": [
+        "AT_P5_1: No locks persist after API failures",
+        "AT_P5_2: SIGUSR1 restart releases all locks",
+        "AT_P5_3: Deadlock detection triggers alerts",
+        "AT_P5_4: Automatic cleanup recovers from leaks",
+        "AT_P5_5: 72-hour soak test shows no resource growth"
+      ],
+      "estimated_effort": "3 engineer-weeks",
+      "stability_impact": "Eliminates need for manual interventions and restarts"
+    },
+    "P6:compliance_documentation": {
+      "type": "COMPLIANCE",
+      "priority": "P1_HIGH",
+      "status": "DESIGN_COMPLETE",
+      "change": "Comprehensive compliance documentation for SOC2, HIPAA, GDPR",
+      "rationale": "Enterprise customers require compliance documentation",
+      "fixes_issues": [],
+      "implementation_spec": {
+        "documents": [
+          "SOC2 Type II readiness assessment",
+          "HIPAA compliance guide",
+          "GDPR data processing agreement template",
+          "Privacy policy template",
+          "Security architecture documentation",
+          "Incident response plan",
+          "Data retention and deletion procedures",
+          "Audit log requirements and format",
+          "Encryption at rest and in transit documentation"
+        ],
+        "automation": {
+          "compliance_checks": "Automated validation of security controls",
+          "audit_log_validation": "Ensure all required fields present",
+          "data_retention_enforcement": "Automatic deletion per policy"
+        }
+      },
+      "estimated_effort": "4 engineer-weeks",
+      "enterprise_impact": "Enables enterprise sales and regulated industry adoption"
+    },
+    "P7:postgresql_backend": {
+      "type": "SCALABILITY",
+      "priority": "P1_HIGH",
+      "status": "DESIGN_COMPLETE",
+      "change": "PostgreSQL backend with pgvector support as alternative to SQLite",
+      "rationale": "Fixes I_1568 - SQLite limits scalability for enterprise multi-user deployments",
+      "fixes_issues": ["I_1568"],
+      "implementation_spec": {
+        "schema": {
+          "sessions": "id, tenant_id, metadata, created_at, updated_at",
+          "messages": "id, session_id, role, content, timestamp, tokens",
+          "artifacts": "sha256, content, compression, size, refs",
+          "embeddings": "vector(1536) using pgvector for semantic search"
+        },
+        "performance": {
+          "connection_pooling": "pgBouncer for connection management",
+          "read_replicas": "Support for read-only replicas",
+          "partitioning": "Partition by tenant_id and date",
+          "indexing": "B-tree on session_id, GIN on jsonb, IVFFlat on vectors"
+        },
+        "migration": {
+          "dual_write": "Write to both SQLite and PostgreSQL during transition",
+          "validation": "Compare results between backends",
+          "cutover": "Zero-downtime switch to PostgreSQL"
+        },
+        "high_availability": {
+          "replication": "Streaming replication to standby",
+          "automatic_failover": "Using Patroni or similar",
+          "backup": "Continuous WAL archiving + daily snapshots"
+        }
+      },
+      "evidence": ["I_1568"],
+      "acceptance_tests": [
+        "AT_P7_1: 1000 concurrent sessions with <100ms latency",
+        "AT_P7_2: Failover in <30s with zero data loss",
+        "AT_P7_3: Semantic search across 1M messages in <500ms",
+        "AT_P7_4: Zero-downtime migration from SQLite"
+      ],
+      "estimated_effort": "6 engineer-weeks",
+      "scalability_impact": "Enables enterprise scale (1000s of users)"
+    },
+    "P8:chaos_engineering_suite": {
+      "type": "RELIABILITY",
+      "priority": "P0_CRITICAL",
+      "status": "DESIGN_COMPLETE",
+      "change": "Chaos tests for resilience validation",
+      "rationale": "Empirical validation of failure mode handling",
+      "fixes_issues": [],
+      "test_suite": [
+        {
+          "test": "provider_outage_60s",
+          "procedure": "Block primary provider for 60 seconds",
+          "expectation": "Failover <5s, no data loss"
+        },
+        {
+          "test": "network_partition_30s",
+          "procedure": "Partition gateway from internet",
+          "expectation": "Queue messages, resume on reconnection"
+        },
+        {
+          "test": "disk_corruption",
+          "procedure": "Corrupt random 4KB blocks in sessions store",
+          "expectation": "Detect corruption, recover or start fresh"
+        },
+        {
+          "test": "memory_pressure",
+          "procedure": "Consume 90% of system memory",
+          "expectation": "Graceful degradation, no crashes"
+        },
+        {
+          "test": "cpu_saturation",
+          "procedure": "Saturate CPU for 2 minutes",
+          "expectation": "Delayed responses but no failures"
+        },
+        {
+          "test": "cascading_failures",
+          "procedure": "Fail multiple components simultaneously",
+          "expectation": "Isolated failures, no cascades"
+        }
+      ],
+      "evidence": ["E_REPO"],
+      "acceptance_tests": [
+        "AT_P8_1: All chaos tests pass in staging",
+        "AT_P8_2: No data loss in provider outage test",
+        "AT_P8_3: Automatic recovery from disk corruption",
+        "AT_P8_4: System remains operational under stress"
+      ],
+      "estimated_effort": "2 engineer-weeks",
+      "reliability_impact": "Quantified resilience metrics for production"
+    },
+    "P9:enterprise_integrations": {
+      "type": "ENTERPRISE",
+      "priority": "P1_HIGH",
+      "status": "DESIGN_COMPLETE",
+      "change": "Fix enterprise provider integrations (Copilot Enterprise, Azure OpenAI)",
+      "rationale": "Fixes I_1797, I_2332 - Critical blockers for enterprise customers",
+      "fixes_issues": ["I_1797", "I_2332", "I_2292", "I_2279"],
+      "implementation_spec": {
+        "github_copilot_enterprise": {
+          "issue": "HTTP 421 Misdirected Request errors",
+          "root_cause": "Enterprise endpoint routing incompatibility",
+          "fix": "Detect enterprise accounts, use correct endpoint",
+          "endpoint_logic": "If account type == enterprise, use /v1/enterprise/chat/completions"
+        },
+        "azure_openai": {
+          "issue": "tool_use_id mismatches with Azure-hosted models",
+          "root_cause": "Tool ID generation differs from native API",
+          "fix": "Normalize tool IDs across providers, handle Azure-specific format"
+        },
+        "ollama_local": {
+          "issue": "enforceFinalTag incorrectly applied, returns '(no output)'",
+          "root_cause": "Global configuration applied to provider that doesn't support it",
+          "fix": "Per-provider configuration, detect capabilities"
+        },
+        "provider_abstraction": {
+          "pattern": "Provider adapter pattern with capability detection",
+          "capabilities": "Each provider declares supported features",
+          "routing": "Route based on capabilities + user preferences"
+        }
+      },
+      "evidence": ["I_1797", "I_2332", "I_2292", "I_2279"],
+      "acceptance_tests": [
+        "AT_P9_1: Copilot Enterprise accounts connect successfully",
+        "AT_P9_2: Azure OpenAI tools work correctly",
+        "AT_P9_3: Ollama local models produce output",
+        "AT_P9_4: All providers pass integration test suite"
+      ],
+      "estimated_effort": "3 engineer-weeks",
+      "enterprise_impact": "Unblocks enterprise customers with existing AI investments"
+    },
+    "P10:noninteractive_deployment": {
+      "type": "OPERATIONS",
+      "priority": "P1_HIGH",
+      "status": "DESIGN_COMPLETE",
+      "change": "Fully non-interactive deployment mode for CI/CD",
+      "rationale": "Fixes I_1950 - Interactive prompts block automated deployments",
+      "fixes_issues": ["I_1950", "I_2178"],
+      "implementation_spec": {
+        "configuration": {
+          "env_var_config": "All config via environment variables",
+          "config_file": "Accept full config file path",
+          "validation": "Validate config completeness before starting",
+          "defaults": "Sensible defaults for all optional settings"
+        },
+        "deployment_modes": {
+          "interactive": "Current behavior, prompts for missing config",
+          "headless": "New mode, fails fast on missing required config",
+          "hybrid": "Use env vars, prompt only for critical missing items"
+        },
+        "docker_specific": {
+          "init_container": "Validate config before starting gateway",
+          "health_checks": "Readiness and liveness probes",
+          "secrets_management": "Docker secrets or k8s secrets support",
+          "zero_touch": "docker-compose up just works with .env file"
+        },
+        "documentation": {
+          "examples": "Complete docker-compose.yml examples",
+          "k8s_manifests": "Helm charts for Kubernetes",
+          "env_template": ".env.example with all variables documented"
+        }
+      },
+      "evidence": ["I_1950", "I_2178"],
+      "acceptance_tests": [
+        "AT_P10_1: Deploy to Docker without any prompts",
+        "AT_P10_2: Deploy to k8s via helm install",
+        "AT_P10_3: CI/CD pipeline deploys successfully",
+        "AT_P10_4: Config validation catches errors early"
+      ],
+      "estimated_effort": "2 engineer-weeks",
+      "operations_impact": "Enables modern DevOps practices and automation"
+    },
+    "P11:deadlock_resolution": {
+      "type": "STABILITY",
+      "priority": "P1_HIGH",
+      "status": "DESIGN_COMPLETE",
+      "change": "Systematic deadlock prevention and detection",
+      "rationale": "Fixes I_1812 - Deadlocks between cron and agent operations",
+      "fixes_issues": ["I_1812"],
+      "implementation_spec": {
+        "lock_ordering": {
+          "define_hierarchy": "session < cron < agent < tool",
+          "enforce_order": "Always acquire locks in hierarchy order",
+          "validation": "Runtime checks for order violations"
+        },
+        "deadlock_detection": {
+          "timeout_locks": "All locks have maximum hold time",
+          "dependency_graph": "Track lock dependencies",
+          "cycle_detection": "Detect circular wait conditions",
+          "automatic_recovery": "Break deadlocks by releasing youngest lock"
+        },
+        "alternative_patterns": {
+          "lock_free_structures": "Use atomic operations where possible",
+          "message_passing": "Actor model for cron/agent coordination",
+          "optimistic_locking": "Version-based concurrency control"
+        },
+        "monitoring": {
+          "lock_wait_time": "Track time waiting for locks",
+          "contention_metrics": "Measure lock contention",
+          "deadlock_events": "Log and alert on deadlock detection"
+        }
+      },
+      "evidence": ["I_1812"],
+      "acceptance_tests": [
+        "AT_P11_1: Cron and agent run concurrently without deadlock",
+        "AT_P11_2: Lock hierarchy violations detected",
+        "AT_P11_3: Deadlock recovery within 5s",
+        "AT_P11_4: 48-hour stress test with no deadlocks"
+      ],
+      "estimated_effort": "2 engineer-weeks",
+      "stability_impact": "Eliminates complete system hangs"
+    },
+    "P12:message_loss_prevention": {
+      "type": "DATA_INTEGRITY",
+      "priority": "P0_CRITICAL",
+      "status": "DESIGN_COMPLETE",
+      "change": "Message durability and zero-loss restart protocol",
+      "rationale": "Fixes I_1862, I_1825 - Message loss during restarts unacceptable for production",
+      "fixes_issues": ["I_1862", "I_1825"],
+      "implementation_spec": {
+        "write_ahead_log": {
+          "pattern": "WAL for all inbound messages",
+          "storage": "Durable append-only log",
+          "ack_protocol": "Only ack to channel after WAL commit",
+          "replay": "Replay WAL on startup"
+        },
+        "graceful_shutdown": {
+          "signal_handling": "SIGTERM triggers graceful shutdown",
+          "drain_period": "30s to complete in-flight operations",
+          "checkpoint": "Flush all state to disk",
+          "status": "Signal readiness for termination"
+        },
+        "zero_downtime_restart": {
+          "rolling_restart": "Start new instance before killing old",
+          "connection_draining": "Old instance stops accepting new connections",
+          "state_transfer": "Transfer in-flight state to new instance",
+          "atomic_cutover": "Update service discovery only when ready"
+        },
+        "message_guarantees": {
+          "at_least_once": "Messages never lost",
+          "idempotency": "Handle duplicate deliveries gracefully",
+          "ordering": "Preserve per-session message ordering"
+        }
+      },
+      "evidence": ["I_1862", "I_1825"],
+      "acceptance_tests": [
+        "AT_P12_1: Send 1000 messages, restart, verify all delivered",
+        "AT_P12_2: Concurrent messages during restart not lost",
+        "AT_P12_3: SIGTERM graceful shutdown completes in <30s",
+        "AT_P12_4: Zero message loss in chaos engineering tests"
+      ],
+      "estimated_effort": "3 engineer-weeks",
+      "data_integrity_impact": "Meets enterprise data durability requirements"
+    },
+    "P13:enterprise_monitoring": {
+      "type": "OBSERVABILITY",
+      "priority": "P0_CRITICAL",
+      "status": "DESIGN_COMPLETE",
+      "change": "Comprehensive monitoring, metrics, and alerting for production operations",
+      "rationale": "Currently no built-in monitoring suitable for production",
+      "fixes_issues": [],
+      "implementation_spec": {
+        "metrics_export": {
+          "format": "Prometheus format via /metrics endpoint",
+          "cardinality": "Label by tenant, channel, provider, tool",
+          "categories": [
+            "Request rates and latencies (p50, p95, p99)",
+            "Error rates by type and component",
+            "Resource utilization (CPU, memory, disk, locks)",
+            "Business metrics (conversations, messages, cost)",
+            "Security events (auth failures, rate limits)"
+          ]
+        },
+        "structured_logging": {
+          "format": "JSON structured logs",
+          "required_fields": "timestamp, level, component, trace_id, session_id, tenant_id",
+          "sensitive_data": "Automatic redaction of PII and credentials",
+          "levels": "debug, info, warn, error, fatal"
+        },
+        "distributed_tracing": {
+          "standard": "OpenTelemetry",
+          "propagation": "W3C Trace Context",
+          "sampling": "Adaptive sampling based on error rates",
+          "spans": "Gateway, channels, providers, tools"
+        },
+        "alerting": {
+          "critical": [
+            "Gateway down",
+            "Error rate >5%",
+            "Provider crosstalk detected",
+            "Message loss detected",
+            "Resource leaks detected"
+          ],
+          "warning": [
+            "High latency (p95 >5s)",
+            "Disk usage >80%",
+            "Memory usage >85%",
+            "Lock contention >100ms"
+          ]
+        },
+        "dashboards": {
+          "operational": "Real-time system health",
+          "business": "Usage and cost analytics",
+          "security": "Security events and anomalies",
+          "debugging": "Detailed request traces"
+        }
+      },
+      "evidence": ["production_readiness_assessment"],
+      "acceptance_tests": [
+        "AT_P13_1: All metrics exported to Prometheus",
+        "AT_P13_2: Critical alerts fire within 30s",
+        "AT_P13_3: Distributed traces complete end-to-end",
+        "AT_P13_4: Dashboards show real-time system state"
+      ],
+      "estimated_effort": "3 engineer-weeks",
+      "operations_impact": "Enables production operations and incident response"
+    },
+    "P14:context_management_overhaul": {
+      "type": "ARCHITECTURE",
+      "priority": "P1_HIGH",
+      "status": "DESIGN_COMPLETE",
+      "change": "Robust context management with tool ID integrity guarantees",
+      "rationale": "Fixes I_2335, I_2250, I_1685 - Context truncation causes tool failures",
+      "fixes_issues": ["I_2335", "I_2250", "I_1685", "I_2127"],
+      "implementation_spec": {
+        "tool_id_integrity": {
+          "persistent_mapping": "Maintain tool_use_id → tool_result_id mapping",
+          "compaction_aware": "Preserve mappings across compaction",
+          "validation": "Verify ID matches before sending to API",
+          "recovery": "Auto-recover from mismatches when possible"
+        },
+        "context_budgeting": {
+          "reserve_space": "Reserve tokens for tool results",
+          "predictive": "Estimate result size before execution",
+          "priority_pruning": "Keep recent + tool-related messages",
+          "user_control": "Configurable pruning strategy"
+        },
+        "compaction_improvements": {
+          "semantic_preservation": "Preserve tool calls and their results",
+          "summary_quality": "Better summarization of pruned content",
+          "rollback": "Can rollback compaction if it causes errors",
+          "monitoring_isolation": "Separate context for heartbeat system"
+        },
+        "error_recovery": {
+          "detect_mismatch": "Catch tool_use_id errors from API",
+          "repair_transcript": "Attempt to fix ID mismatches",
+          "fallback": "Request fresh context if repair fails",
+          "user_notification": "Inform user of context reset"
+        }
+      },
+      "evidence": ["I_2335", "I_2250", "I_1685", "I_2127"],
+      "acceptance_tests": [
+        "AT_P14_1: Tool calls work after compaction",
+        "AT_P14_2: Long conversations maintain tool capability",
+        "AT_P14_3: Automatic recovery from ID mismatches",
+        "AT_P14_4: Heartbeat works in full-context sessions"
+      ],
+      "estimated_effort": "4 engineer-weeks",
+      "reliability_impact": "Eliminates tool failures in long conversations"
+    },
+    "P15:parallel_sessions": {
+      "type": "SCALABILITY",
+      "priority": "P1_HIGH",
+      "status": "DESIGN_COMPLETE",
+      "change": "Parallel session processing for multi-user scalability",
+      "rationale": "Fixes I_1159 - Sequential processing limits throughput",
+      "fixes_issues": ["I_1159"],
+      "implementation_spec": {
+        "concurrency_model": {
+          "worker_pool": "Configurable pool of session workers",
+          "isolation": "Each worker processes one session at a time",
+          "scheduling": "Fair scheduling across tenants/sessions",
+          "backpressure": "Queue depth limits prevent overload"
+        },
+        "resource_management": {
+          "memory_limits": "Per-worker memory limits",
+          "cpu_affinity": "Optional CPU pinning for workers",
+          "gpu_sharing": "Fair GPU access for local inference",
+          "connection_pooling": "Shared connection pools to providers"
+        },
+        "state_isolation": {
+          "no_shared_state": "Workers share nothing except metadata",
+          "transaction_isolation": "Database transactions per session",
+          "lock_granularity": "Fine-grained locks at session level"
+        },
+        "performance": {
+          "target": "100 concurrent sessions on 16-core machine",
+          "latency": "p95 latency <2s under full load",
+          "throughput": "Handle 1000 messages/minute aggregate"
+        }
+      },
+      "evidence": ["I_1159"],
+      "acceptance_tests": [
+        "AT_P15_1: 100 concurrent sessions without degradation",
+        "AT_P15_2: Fair scheduling across users",
+        "AT_P15_3: Graceful handling of overload",
+        "AT_P15_4: Resource limits prevent runaway workers"
+      ],
+      "estimated_effort": "4 engineer-weeks",
+      "scalability_impact": "Enables serving 100s of concurrent users"
+    },
+    "P16:system_user_support": {
+      "type": "SECURITY",
+      "priority": "P1_HIGH",
+      "status": "DESIGN_COMPLETE",
+      "change": "Support running gateway as isolated system user",
+      "rationale": "Fixes I_2341 - Running as personal user violates enterprise security policies",
+      "fixes_issues": ["I_2341"],
+      "implementation_spec": {
+        "user_separation": {
+          "service_user": "clawdbot system user with minimal privileges",
+          "group": "clawdbot group for shared resources",
+          "home_directory": "/var/lib/clawdbot",
+          "no_login": "Service account without shell access"
+        },
+        "permissions": {
+          "config": "Read-only access to /etc/clawdbot",
+          "data": "Read-write to /var/lib/clawdbot",
+          "logs": "Write to /var/log/clawdbot",
+          "sockets": "Access to required Unix sockets only"
+        },
+        "installation": {
+          "package_creation": "Create system user during install",
+          "migration": "Tool to migrate from personal to system user",
+          "validation": "Check permissions are correct"
+        },
+        "compatibility": {
+          "personal_mode": "Still support personal user mode for development",
+          "detection": "Auto-detect and adapt to user type",
+          "documentation": "Clear guidance for both modes"
+        }
+      },
+      "evidence": ["I_2341"],
+      "acceptance_tests": [
+        "AT_P16_1: Gateway runs as clawdbot system user",
+        "AT_P16_2: No privilege escalation possible",
+        "AT_P16_3: Migration from personal to system user succeeds",
+        "AT_P16_4: Passes enterprise security scan"
+      ],
+      "estimated_effort": "1.5 engineer-weeks",
+      "security_impact": "Meets enterprise principle of least privilege"
+    },
+    "P17:proxy_support": {
+      "type": "OPERATIONS",
+      "priority": "P1_HIGH",
+      "status": "DESIGN_COMPLETE",
+      "change": "Full HTTP/HTTPS proxy support",
+      "rationale": "Fixes I_2102 - Cannot deploy in corporate networks requiring proxies",
+      "fixes_issues": ["I_2102"],
+      "implementation_spec": {
+        "proxy_configuration": {
+          "env_vars": "HTTP_PROXY, HTTPS_PROXY, NO_PROXY",
+          "config_file": "Explicit proxy settings in config",
+          "priority": "Config file > env vars > auto-detect",
+          "validation": "Test proxy connectivity on startup"
+        },
+        "proxy_types": {
+          "http": "HTTP CONNECT proxy",
+          "https": "HTTPS CONNECT proxy",
+          "socks5": "SOCKS5 proxy support",
+          "auth": "Basic and NTLM authentication"
+        },
+        "implementation": {
+          "node_agent": "Configure global-agent or proxy-agent",
+          "fetch_calls": "All fetch() respects proxy settings",
+          "websockets": "WebSocket connections via proxy",
+          "provider_apis": "Provider API calls via proxy"
+        },
+        "bypass": {
+          "no_proxy": "Honor NO_PROXY for internal services",
+          "localhost": "Never proxy localhost/127.0.0.1",
+          "private_ranges": "Optional bypass for RFC1918 addresses"
+        }
+      },
+      "evidence": ["I_2102"],
+      "acceptance_tests": [
+        "AT_P17_1: Connect through HTTP proxy",
+        "AT_P17_2: Connect through authenticated proxy",
+        "AT_P17_3: NO_PROXY respected for internal services",
+        "AT_P17_4: Proxy failures handled gracefully"
+      ],
+      "estimated_effort": "1 engineer-week",
+      "enterprise_impact": "Enables deployment in corporate networks"
+    }
+  }
+}

@@ -1,0 +1,767 @@
+{
+  "HIGGS_STANDARD": {
+    "standard": "HIGGS_COGNIMAP_STANDARD",
+    "target_version": "v1.0.0-PRODUCTION",
+    "target_grade": "GM:PRODUCTION_GRADE_PROTOCOL",
+    "principles": [
+      "Evidence-first dual registry (claims ↔ evidence) with explicit verification status",
+      "Fail-closed operational defaults (no silent downgrade on safety-critical paths)",
+      "Append-only patch log with implementation-ready specs",
+      "Runbook-driven operations (every known failure has detection + mitigation)",
+      "Privacy by design (isolation boundaries are explicit and testable)",
+      "LLM-optimized navigation with semantic indexing and criticality ratings"
+    ],
+    "id_grammar": "^(GM|S|C|E|I|P|RB|KPI|CFG|TH|COMP)[:_][A-Za-z0-9._:-]+$",
+    "verification_policy": {
+      "VERIFIED": "Claim is supported by at least one Evidence ID and is not contradicted by other evidence.",
+      "PARTIALLY_VERIFIED": "Claim is supported but has known caveats/edge cases; caveats listed.",
+      "UNVERIFIED": "Claim is plausible but not backed by evidence in this artifact.",
+      "DEPRECATED": "Claim no longer believed accurate; retained for lineage with replacement guidance."
+    }
+  },
+  "metadata": {
+    "id": "GM:clawdbot-production-suite",
+    "name": "Clawdbot — Production Expert Suite (Higgs Standard v1.0.0)",
+    "version": "v2.0.0-COMPREHENSIVE",
+    "status": "GA:PRODUCTION_GRADE_COGNIMAP",
+    "created_at": "2026-01-27T00:00:00Z",
+    "updated_at": "2026-01-27T02:00:00Z",
+    "authors": [
+      "Kamden Higgs (Higgs AI LLC)",
+      "Claude (Anthropic) - Comprehensive Analysis"
+    ],
+    "company": "Higgs AI LLC",
+    "license": "CC-BY-NC-4.0 (commercial use requires license)",
+    "domain": "ai.agent_orchestration.local_first.gateway",
+    "knowledge_cutoff": "2026-01-26",
+    "artifact_intent": "Comprehensive reference architecture + security/ops hardening + enterprise deployment guide for Clawdbot with COMPLETE issue tracking (412 open issues analyzed)",
+    "product_readiness_note": "PRODUCTION READINESS: 4/10 - Critical stability and enterprise adoption blockers identified. See roadmap for remediation plan.",
+    "analysis_scope": {
+      "total_issues_analyzed": 412,
+      "critical_security": 5,
+      "high_stability": 18,
+      "high_performance": 8,
+      "critical_data_integrity": 6,
+      "architecture_flaws": 12,
+      "operational_challenges": 25,
+      "scalability_limitations": 8
+    },
+    "integrity": {
+      "canonical_json_sha256": "PLACEHOLDER_REPLACE_AFTER_GENERATION",
+      "canonicalization": "json(sort_keys=true, separators=(',',':'), ensure_ascii=false, no_whitespace)",
+      "generated_at_utc": "2026-01-27T02:00:00Z"
+    },
+    "citations": [
+      "Based on clawdbot/clawdbot GitHub repository (412 open issues analyzed)",
+      "Incorporates comprehensive security analysis from Argus Security audit (#1796)",
+      "Follows Higgs Standard for evidence-based system documentation",
+      "Complete issue mapping from categories: Security, Stability, Performance, Architecture, Operations, Scalability"
+    ]
+  },
+  "identity": {
+    "you_are": "Clawdbot Production Expert — Senior Engineer & Security Operator with Complete System Knowledge",
+    "you_were_created_by": "Higgs Standard Documentation Framework + Comprehensive GitHub Analysis",
+    "you_exist_to": "Help teams deploy, secure, operate, debug, and extend Clawdbot with production-grade discipline. Guide teams through 412 known issues with clear mitigation paths.",
+    "core_principles": [
+      "Evidence-first: Always cite sources or label claims as UNVERIFIED",
+      "Safety-first: Never recommend risky automation without explicit safeguards",
+      "Ops-minded: Provide runnable commands and measurable fixes",
+      "Architecture-aware: Understand system boundaries and failure modes",
+      "Issue-aware: Know all 412 open issues and their impacts"
+    ],
+    "tone": "Direct, technical, risk-aware, implementation-focused, brutally honest about production readiness",
+    "non_negotiables": [
+      "Never expose Gateway directly to public internet without mTLS/tunneling",
+      "Always require allowlists for outbound channel automation",
+      "Always sandbox untrusted tool execution",
+      "Always maintain session isolation boundaries",
+      "Always cite evidence or label claims as UNVERIFIED",
+      "Never deploy to production without addressing P0_CRITICAL patches",
+      "Never ignore stability issues (#2359, #2272, #2369 gateway crashes)",
+      "Never deploy with message loss risk (#1862 restart race condition)"
+    ],
+    "production_readiness_stance": "Clawdbot requires substantial hardening before enterprise production deployment. Current score: 4/10. Critical blockers: 12. See implementation roadmap for prioritized fixes."
+  },
+  "rehydration": {
+    "activation_phrase": "Initialize Clawdbot Production Expert Mode",
+    "how_to_use": [
+      "1. Start with NAV.critical_paths based on your goal (deploy, debug, secure)",
+      "2. Use NAV.alias_router for quick topic jumps",
+      "3. Consult claims_registry for verified facts",
+      "4. Check issues_registry for known problems (412 total)",
+      "5. Apply patches_registry in priority order for hardening",
+      "6. Follow runbooks in S8 for operational procedures",
+      "7. Review production_readiness_assessment for deployment blockers"
+    ],
+    "safety_modes": {
+      "SAFE": {
+        "description": "Default production mode with all safeguards",
+        "rules": [
+          "No outbound automation without explicit allowlists",
+          "Sandbox all tool execution",
+          "Require mTLS for remote access",
+          "Enable all audit logging",
+          "Apply all P0_CRITICAL patches before deployment"
+        ]
+      },
+      "LAB": {
+        "description": "Experimental/testing mode",
+        "rules": [
+          "Limited automation with monitoring",
+          "Controlled tool access",
+          "Local-only execution",
+          "Full rollback capability",
+          "Isolated test environment"
+        ]
+      },
+      "ENTERPRISE": {
+        "description": "Enterprise production mode",
+        "rules": [
+          "PostgreSQL backend required (#1568)",
+          "Parallel session processing enabled (#1159)",
+          "Plugin process isolation (#1831)",
+          "Non-interactive deployment (#1950)",
+          "Comprehensive monitoring and alerting",
+          "All P0 and P1 patches applied"
+        ]
+      }
+    }
+  },
+  "NAV": {
+    "critical_paths": {
+      "CP:production_deployment": [
+        "⚠️ READ FIRST: production_readiness_assessment (4/10 score)",
+        "S1 (Understand architecture)",
+        "S6 (Security configuration)",
+        "P0_CRITICAL_PATCHES (Must apply before production)",
+        "S2 (Install/deploy)",
+        "S10 (Monitoring setup)",
+        "S3 (Channel onboarding)",
+        "S5 (Tool enablement)",
+        "S8.runbooks (Operational procedures)"
+      ],
+      "CP:security_hardening": [
+        "S6 (Threat model - comprehensive)",
+        "P1 (Provider binding)",
+        "P2 (Artifact storage)",
+        "P3 (Credential exposure prevention)",
+        "P4 (Network resilience)",
+        "S8.runbooks (Safety procedures)",
+        "S10 (Audit logging)",
+        "TH:complete_threat_model (All 8 threat categories)"
+      ],
+      "CP:incident_response": [
+        "S10 (Monitoring alerts)",
+        "S8.issues_registry (All 412 issues categorized)",
+        "S8.runbooks (Mitigation procedures)",
+        "S7 (State recovery)",
+        "emergency_runbooks (Gateway crashes, deadlocks, resource leaks)"
+      ],
+      "CP:enterprise_adoption": [
+        "⚠️ BLOCKER: Review enterprise_adoption_blockers first",
+        "S11 (Deployment models)",
+        "S6 (Security/compliance)",
+        "P6 (Compliance docs)",
+        "P7 (PostgreSQL backend - REQUIRED)",
+        "P9 (Enterprise integrations fix)",
+        "S10 (Enterprise monitoring)",
+        "P10 (Non-interactive deployment)"
+      ],
+      "CP:stability_fixes": [
+        "⚠️ CRITICAL: Gateway crash issues (#2359, #2272, #2369)",
+        "P4 (Network resilience)",
+        "P5 (Resource leak prevention)",
+        "P11 (Deadlock resolution)",
+        "P12 (Message loss prevention)",
+        "S8.runbooks.stability (All stability procedures)"
+      ]
+    },
+    "alias_router": {
+      "install": "S2",
+      "docker": "S2.docker",
+      "kubernetes": "S2.kubernetes",
+      "security": "S6",
+      "tailscale": "S6.network_isolation",
+      "auth": "S6.authn",
+      "whatsapp": "S3.whatsapp",
+      "slack": "S3.slack",
+      "telegram": "S3.telegram",
+      "email": "S3.email",
+      "tools": "S5",
+      "sandbox": "S5.sandbox",
+      "providers": "S4",
+      "routing": "S4.routing",
+      "compaction": "S7.compaction",
+      "sessions.jsonl": "S7.storage",
+      "bloat": "I_1808",
+      "crosstalk": "I_788",
+      "tool_loop": "I_806",
+      "pairing_safety": "I_834",
+      "crashes": "I_2359",
+      "deadlock": "I_1812",
+      "message_loss": "I_1862",
+      "resource_leaks": "I_2365",
+      "runbooks": "S8.runbooks",
+      "metrics": "S10.metrics",
+      "alerts": "S10.alerts",
+      "enterprise": "S11",
+      "compliance": "S11.compliance",
+      "roadmap": "S12",
+      "production_readiness": "production_readiness_assessment",
+      "all_issues": "S8.issues_registry"
+    },
+    "quick_start": [
+      {
+        "goal": "Evaluate production readiness",
+        "steps": [
+          "1. Read production_readiness_assessment (CRITICAL)",
+          "2. Review enterprise_adoption_blockers",
+          "3. Check P0_CRITICAL_PATCHES list",
+          "4. Assess stability_critical_issues",
+          "5. Review required monitoring (S10)",
+          "6. Make go/no-go decision"
+        ]
+      },
+      {
+        "goal": "Safe single-user deployment",
+        "steps": [
+          "1. Read S6.security_basics",
+          "2. Apply P0_CRITICAL patches",
+          "3. Install via S2.install_modes.local_dev",
+          "4. Configure S10.logging minimum",
+          "5. Add one channel via S3 with allowlists",
+          "6. Enable tools via S5 with sandboxing",
+          "7. Monitor for issues from I_2359, I_2272, I_2369"
+        ]
+      },
+      {
+        "goal": "Debug common issues",
+        "steps": [
+          "1. Check S10.metrics for anomalies",
+          "2. Consult S8.issues_registry by symptoms (412 issues)",
+          "3. Run relevant S8.runbooks",
+          "4. Apply corresponding patches",
+          "5. Review similar issues in category"
+        ]
+      }
+    ]
+  },
+  "production_readiness_assessment": {
+    "overall_score": "4/10",
+    "status": "NOT PRODUCTION READY FOR ENTERPRISE",
+    "last_assessed": "2026-01-26",
+    "total_issues": 412,
+    "critical_blockers": 12,
+    "high_severity": 45,
+    "medium_severity": 35,
+    "low_severity": 8,
+    "enterprise_readiness": "BLOCKED - See enterprise_adoption_blockers",
+    "go_live_recommendation": "DO NOT deploy to production without addressing P0_CRITICAL patches. Acceptable for personal use with monitoring and restart automation.",
+    "key_concerns": [
+      "Gateway crashes on network issues (#2359, #2272, #2369) - UNACCEPTABLE for production",
+      "Multiple deadlocks and race conditions cause unpredictable failures (#1812, #2365, #1862)",
+      "Resource leaks require manual intervention (#2365 lock leaks, #1951 SIGUSR1 locks)",
+      "Message loss during restarts (#1862) - violates data integrity requirements",
+      "Poor error handling leads to cascading failures",
+      "No enterprise database support - SQLite limits scalability (#1568)",
+      "Docker requires interactive mode - blocks CI/CD automation (#1950)",
+      "Security issues: credential exposure (#2321, #2320), no rate limiting (#2149)",
+      "Cross-platform issues: Windows broken (#1963, #2172, #2256), ARM issues (#1889)",
+      "Context management causes tool_use_id mismatches (#2335, #2250)",
+      "Enterprise integrations broken: Copilot Enterprise (#1797), Azure OpenAI (#2332)",
+      "Cron/scheduling unreliable - breaks automation (#1947, #2323, #2277)",
+      "Multiple provider integrations broken: Ollama (#2275), Venice AI (#2315)",
+      "No production monitoring/observability built-in",
+      "Plugin system unreliable (#2173, #1831 process isolation needed)"
+    ],
+    "must_fix_before_production": {
+      "P0_CRITICAL": [
+        "P4: Network resilience (fixes #2359, #2272, #2369)",
+        "P5: Resource leak prevention (fixes #2365, #1951, #1812)",
+        "P12: Message loss prevention (fixes #1862, #1825)",
+        "P1: Provider session binding (fixes #788)",
+        "P3: Credential exposure prevention (fixes #2321, #2320)",
+        "P13: Enterprise monitoring implementation"
+      ],
+      "P1_HIGH": [
+        "P7: PostgreSQL backend (fixes #1568)",
+        "P9: Enterprise integrations (fixes #1797, #2332)",
+        "P10: Non-interactive deployment (fixes #1950)",
+        "P11: Deadlock resolution (fixes #1812)",
+        "P14: Context management overhaul (fixes #2335)"
+      ]
+    },
+    "production_readiness_by_category": {
+      "stability": "2/10 - Multiple crash scenarios, deadlocks, race conditions",
+      "security": "5/10 - Some good defaults but credential exposure and rate limiting gaps",
+      "performance": "4/10 - Session bloat, memory issues, no horizontal scaling",
+      "scalability": "3/10 - SQLite limitation, no parallel processing, no clustering",
+      "observability": "3/10 - Basic logging but no metrics, alerting, or tracing",
+      "operations": "4/10 - Deployment issues, poor error messages, manual interventions needed",
+      "data_integrity": "3/10 - Message loss risk, lock leaks, cache corruption",
+      "enterprise_features": "2/10 - Missing PostgreSQL, broken enterprise integrations, no HA"
+    },
+    "acceptable_use_cases": {
+      "personal_automation": "ACCEPTABLE with monitoring and restart automation",
+      "small_team_internal": "RISKY - Monitor closely, expect manual interventions",
+      "enterprise_production": "NOT ACCEPTABLE - Critical blockers must be resolved",
+      "regulated_industry": "NOT ACCEPTABLE - Compliance and stability requirements not met",
+      "high_availability_required": "NOT ACCEPTABLE - No HA support, message loss risk"
+    },
+    "timeline_to_production_ready": {
+      "minimum_viable": "8-12 weeks (P0_CRITICAL only)",
+      "enterprise_ready": "16-20 weeks (P0 + P1 patches)",
+      "fully_hardened": "24-30 weeks (all patches + chaos engineering)",
+      "effort_required": "4-6 engineers full-time"
+    }
+  },
+  "enterprise_adoption_blockers": {
+    "critical_blockers": [
+      {
+        "blocker": "No PostgreSQL support",
+        "issue": "#1568",
+        "impact": "Cannot scale beyond single server, SQLite unsuitable for multi-user",
+        "requirement": "Enterprise deployments require PostgreSQL or similar RDBMS",
+        "workaround": "None - hard blocker",
+        "patch": "P7:postgresql_backend"
+      },
+      {
+        "blocker": "GitHub Copilot Enterprise integration fails",
+        "issue": "#1797",
+        "impact": "HTTP 421 errors prevent enterprise Copilot customers from using service",
+        "requirement": "Must support enterprise Copilot accounts",
+        "workaround": "None",
+        "patch": "P9:enterprise_integrations"
+      },
+      {
+        "blocker": "Azure OpenAI tool_use_id mismatches",
+        "issue": "#2332",
+        "impact": "Azure-hosted models cannot use tools - core functionality broken",
+        "requirement": "Azure OpenAI is common enterprise choice",
+        "workaround": "None - tools completely broken",
+        "patch": "P9:enterprise_integrations"
+      },
+      {
+        "blocker": "Docker deployment requires interactive mode",
+        "issue": "#1950",
+        "impact": "Cannot deploy via CI/CD pipelines, blocks automation",
+        "requirement": "Headless deployment mandatory for enterprise DevOps",
+        "workaround": "Complex scripting, unreliable",
+        "patch": "P10:noninteractive_deployment"
+      },
+      {
+        "blocker": "Gateway crashes on network issues",
+        "issue": "#2359, #2272, #2369",
+        "impact": "Service unavailable during transient network issues",
+        "requirement": "Must handle network failures gracefully",
+        "workaround": "External monitoring + auto-restart (not acceptable)",
+        "patch": "P4:network_resilience"
+      },
+      {
+        "blocker": "No parallel session processing",
+        "issue": "#1159",
+        "impact": "Cannot serve multiple users efficiently",
+        "requirement": "Enterprise deployments serve 100s of users",
+        "workaround": "None - architectural limitation",
+        "patch": "P15:parallel_sessions"
+      },
+      {
+        "blocker": "Message loss during restarts",
+        "issue": "#1862",
+        "impact": "Cannot perform zero-downtime deployments",
+        "requirement": "Enterprise SLAs require zero message loss",
+        "workaround": "Maintenance windows (not acceptable for 24/7)",
+        "patch": "P12:message_loss_prevention"
+      },
+      {
+        "blocker": "No isolated system user support",
+        "issue": "#2341",
+        "impact": "Must run as personal user, violates security policies",
+        "requirement": "Enterprise security requires service accounts",
+        "workaround": "None",
+        "patch": "P16:system_user_support"
+      },
+      {
+        "blocker": "No HTTP proxy support",
+        "issue": "#2102",
+        "impact": "Cannot deploy in corporate networks requiring proxies",
+        "requirement": "Most enterprises require HTTP_PROXY",
+        "workaround": "None",
+        "patch": "P17:proxy_support"
+      }
+    ],
+    "enterprise_requirements_gap_analysis": {
+      "high_availability": "NOT SUPPORTED - No clustering, no failover, single point of failure",
+      "disaster_recovery": "LIMITED - Manual backup/restore only, no automated DR",
+      "compliance": "GAPS - No SOC2, no HIPAA, no audit trail guarantees",
+      "multi_tenancy": "NOT SUPPORTED - Session isolation exists but no tenant management",
+      "sso_integration": "NOT SUPPORTED - No SAML, no OAuth provider integration",
+      "rbac": "NOT SUPPORTED - No role-based access control",
+      "audit_logging": "BASIC - Logging exists but not tamper-proof or compliant",
+      "encryption": "PARTIAL - TLS supported but no at-rest encryption",
+      "data_retention": "MANUAL - No automated retention policies",
+      "monitoring": "BASIC - No metrics, no alerting, no tracing",
+      "sla_support": "NO - No SLA guarantees, too many stability issues"
+    }
+  },
+  "evidence_registry": {
+    "E_HOME": {
+      "type": "website",
+      "title": "Clawdbot homepage",
+      "url": "https://clawd.bot",
+      "notes": "Project overview, installer, positioning",
+      "last_verified": "2026-01-26"
+    },
+    "E_REPO": {
+      "type": "code",
+      "title": "GitHub — clawdbot/clawdbot",
+      "url": "https://github.com/clawdbot/clawdbot",
+      "notes": "Source code, README, 412 open issues, releases",
+      "last_verified": "2026-01-26"
+    },
+    "E_DOCS_ARCH": {
+      "type": "docs",
+      "title": "Docs — Architecture",
+      "url": "https://docs.clawd.bot/concepts/architecture",
+      "notes": "Core architecture: Gateway, clients, channels, tools, state",
+      "last_verified": "2026-01-26"
+    },
+    "E_DOCS_SECURITY": {
+      "type": "docs",
+      "title": "Docs — Gateway Security",
+      "url": "https://docs.clawd.bot/gateway/security",
+      "notes": "Security guidance: binding, auth, tunneling, threat model",
+      "last_verified": "2026-01-26"
+    },
+    "E_DOCS_TOOLS": {
+      "type": "docs",
+      "title": "Docs — Tools",
+      "url": "https://docs.clawd.bot/tools",
+      "notes": "Tool system: typed tools, execution model, configuration",
+      "last_verified": "2026-01-26"
+    },
+    "E_DOCS_WHATSAPP": {
+      "type": "docs",
+      "title": "Docs — WhatsApp channel",
+      "url": "https://docs.clawd.bot/channels/whatsapp",
+      "notes": "WhatsApp Web integration, QR login, safety considerations",
+      "last_verified": "2026-01-26"
+    },
+    "E_DOCS_PROVIDERS": {
+      "type": "docs",
+      "title": "Docs — Model providers",
+      "url": "https://docs.clawd.bot/concepts/model-providers",
+      "notes": "Supported LLM backends and routing configuration",
+      "last_verified": "2026-01-26"
+    },
+    "E_DOCS_COMPACTION": {
+      "type": "docs",
+      "title": "Docs — Compaction",
+      "url": "https://docs.clawd.bot/concepts/compaction",
+      "notes": "Session compaction near context limits",
+      "last_verified": "2026-01-26"
+    },
+    "E_DOCS_SESSION_MGMT": {
+      "type": "docs",
+      "title": "Docs — Session management & compaction deep dive",
+      "url": "https://docs.clawd.bot/reference/session-management-compaction",
+      "notes": "Session lifecycle, transcript storage, compaction internals",
+      "last_verified": "2026-01-26"
+    },
+    "E_DOCS_TROUBLE": {
+      "type": "docs",
+      "title": "Docs — Gateway troubleshooting",
+      "url": "https://docs.clawd.bot/gateway/troubleshooting",
+      "notes": "Operational problems, status/doctor guidance",
+      "last_verified": "2026-01-26"
+    },
+    "E_ARGUS_AUDIT": {
+      "type": "security_audit",
+      "title": "Issue #1796 — Argus Security Comprehensive 6-Phase Analysis",
+      "url": "https://github.com/clawdbot/clawdbot/issues/1796",
+      "notes": "512 security findings, 8 critical issues identified",
+      "status": "CLOSED",
+      "last_verified": "2026-01-26"
+    },
+    "I_1808": {
+      "type": "issue",
+      "title": "Issue #1808 — session/gateway tool output bloats sessions.jsonl",
+      "url": "https://github.com/clawdbot/clawdbot/issues/1808",
+      "notes": "Runaway transcript growth when tool returns large outputs",
+      "status": "OPEN",
+      "severity": "HIGH"
+    },
+    "I_2254": {
+      "type": "issue",
+      "title": "Issue #2254 — Large session files",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2254",
+      "notes": "Session files grow to problematic sizes, affecting load times and memory",
+      "status": "OPEN",
+      "severity": "HIGH"
+    },
+    "I_806": {
+      "type": "issue",
+      "title": "Issue #806 — tool calls loop / max tool call behavior",
+      "url": "https://github.com/clawdbot/clawdbot/issues/806",
+      "notes": "Stuck tool loops without progress",
+      "status": "OPEN",
+      "severity": "MEDIUM"
+    },
+    "I_834": {
+      "type": "issue",
+      "title": "Issue #834 — WhatsApp pairing message sent to contacts (safety)",
+      "url": "https://github.com/clawdbot/clawdbot/issues/834",
+      "notes": "Unintended outbound messages during pairing",
+      "status": "OPEN",
+      "severity": "CRITICAL"
+    },
+    "I_788": {
+      "type": "issue",
+      "title": "Issue #788 — Messages/responses leak between providers",
+      "url": "https://github.com/clawdbot/clawdbot/issues/788",
+      "notes": "Provider crosstalk, privacy breach risk",
+      "status": "OPEN",
+      "severity": "CRITICAL"
+    },
+    "I_2335": {
+      "type": "issue",
+      "title": "Issue #2335 — tool_use_id mismatch due to context truncation",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2335",
+      "notes": "Tool call protocol errors from context truncation",
+      "status": "OPEN",
+      "severity": "HIGH"
+    },
+    "I_2359": {
+      "type": "issue",
+      "title": "Issue #2359 — Unhandled undici promise rejections crash gateway",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2359",
+      "notes": "Gateway crashes during brief network interruptions",
+      "status": "OPEN",
+      "severity": "CRITICAL"
+    },
+    "I_2272": {
+      "type": "issue",
+      "title": "Issue #2272 — Gateway crashes on transient network failures",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2272",
+      "notes": "Service terminates on temporary network issues instead of recovering",
+      "status": "OPEN",
+      "severity": "CRITICAL"
+    },
+    "I_2369": {
+      "type": "issue",
+      "title": "Issue #2369 — Add network resilience for unhandled fetch failures",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2369",
+      "notes": "Missing error handling for network fetch operations",
+      "status": "OPEN",
+      "severity": "CRITICAL"
+    },
+    "I_2365": {
+      "type": "issue",
+      "title": "Issue #2365 — Session lock not released on API failure",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2365",
+      "notes": "Lock release logic missing in error handling paths, causes resource leaks",
+      "status": "OPEN",
+      "severity": "CRITICAL"
+    },
+    "I_1812": {
+      "type": "issue",
+      "title": "Issue #1812 — Deadlock between cron timer lock and agent tool calls",
+      "url": "https://github.com/clawdbot/clawdbot/issues/1812",
+      "notes": "Lock ordering issue causing mutual blocking",
+      "status": "OPEN",
+      "severity": "CRITICAL"
+    },
+    "I_1862": {
+      "type": "issue",
+      "title": "Issue #1862 — Messages lost during gateway restart (race condition)",
+      "url": "https://github.com/clawdbot/clawdbot/issues/1862",
+      "notes": "Race condition during gateway shutdown/startup transition",
+      "status": "OPEN",
+      "severity": "HIGH"
+    },
+    "I_2321": {
+      "type": "issue",
+      "title": "Issue #2321 — security audit: warn when API keys appear in auth profile names",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2321",
+      "notes": "API keys can be inadvertently exposed in profile names",
+      "status": "OPEN",
+      "severity": "HIGH"
+    },
+    "I_2320": {
+      "type": "issue",
+      "title": "Issue #2320 — security audit --fix: offer to extract hardcoded secrets to .env",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2320",
+      "notes": "No automated detection or remediation for hardcoded credentials",
+      "status": "OPEN",
+      "severity": "HIGH"
+    },
+    "I_2341": {
+      "type": "issue",
+      "title": "Issue #2341 — Support running gateway as isolated system user",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2341",
+      "notes": "Gateway requires personal user execution, violating principle of least privilege",
+      "status": "OPEN",
+      "severity": "HIGH"
+    },
+    "I_2149": {
+      "type": "issue",
+      "title": "Issue #2149 — Add rate limiting to webhook endpoints",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2149",
+      "notes": "Webhook endpoints lack rate limiting protection",
+      "status": "OPEN",
+      "severity": "MEDIUM"
+    },
+    "I_1797": {
+      "type": "issue",
+      "title": "Issue #1797 — GitHub Copilot Enterprise accounts fail with HTTP 421",
+      "url": "https://github.com/clawdbot/clawdbot/issues/1797",
+      "notes": "Enterprise Copilot endpoint routing incompatibility",
+      "status": "OPEN",
+      "severity": "CRITICAL"
+    },
+    "I_2332": {
+      "type": "issue",
+      "title": "Issue #2332 — tool_use_id mismatch error with Azure-hosted Claude",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2332",
+      "notes": "Tool ID generation not compatible with custom API providers",
+      "status": "OPEN",
+      "severity": "HIGH"
+    },
+    "I_1568": {
+      "type": "issue",
+      "title": "Issue #1568 — PostgreSQL + pgvector backend for memory",
+      "url": "https://github.com/clawdbot/clawdbot/issues/1568",
+      "notes": "SQLite limitations for multi-user and large-scale deployments",
+      "status": "OPEN",
+      "severity": "HIGH"
+    },
+    "I_1950": {
+      "type": "issue",
+      "title": "Issue #1950 — Support fully non-interactive Docker deployment",
+      "url": "https://github.com/clawdbot/clawdbot/issues/1950",
+      "notes": "Deployment requires interactive prompts, blocks automation",
+      "status": "OPEN",
+      "severity": "HIGH"
+    },
+    "I_2102": {
+      "type": "issue",
+      "title": "Issue #2102 — HTTP_PROXY is ignored",
+      "url": "https://github.com/clawdbot/clawdbot/issues/2102",
+      "notes": "Proxy environment variables not respected",
+      "status": "OPEN",
+      "severity": "MEDIUM"
+    },
+    "RFC_5869": {
+      "type": "spec",
+      "title": "RFC 5869 — HKDF: HMAC-based Extract-and-Expand Key Derivation",
+      "url": "https://datatracker.ietf.org/doc/html/rfc5869",
+      "notes": "Key derivation standard for cryptographic binding"
+    },
+    "FIPS_198_1": {
+      "type": "spec",
+      "title": "NIST FIPS 198-1 — The Keyed-Hash Message Authentication Code (HMAC)",
+      "url": "https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.198-1.pdf",
+      "notes": "HMAC standard for message authentication"
+    }
+  },
+  "claims_registry": {
+    "C:local_first_gateway": {
+      "status": "VERIFIED",
+      "claim": "Clawdbot is built around a local-first Gateway that bridges messaging channels to model providers and tool execution",
+      "evidence": ["E_DOCS_ARCH", "E_HOME", "E_REPO"],
+      "implications": [
+        "Data stays on user's infrastructure",
+        "Requires explicit network configuration for remote access",
+        "Enables offline operation for some tasks"
+      ]
+    },
+    "C:secure_by_default_bind_localhost": {
+      "status": "VERIFIED",
+      "claim": "Default-safe posture: Gateway binds to localhost; remote access requires authenticated tunnel (e.g., Tailscale)",
+      "evidence": ["E_DOCS_SECURITY", "E_DOCS_TROUBLE"],
+      "security_controls": [
+        "Bind to 127.0.0.1 by default",
+        "Require auth token for any remote access",
+        "Recommend Tailscale/ZeroTier for secure tunnels"
+      ]
+    },
+    "C:compaction_feature_exists": {
+      "status": "VERIFIED",
+      "claim": "Clawdbot implements compaction to manage sessions near model context limits",
+      "evidence": ["E_DOCS_COMPACTION", "E_DOCS_SESSION_MGMT"],
+      "caveats": ["Has failure modes under extreme load (I_2254)", "Tool_use_id mismatches after compaction (I_2335)"]
+    },
+    "C:known_risks_tool_output_bloat": {
+      "status": "VERIFIED",
+      "claim": "Large tool outputs cause session storage bloat leading to compaction failures",
+      "evidence": ["I_1808", "I_2254"],
+      "required_mitigations": [
+        "Tool output size limiting",
+        "External artifact storage",
+        "Reference-based transcripts"
+      ]
+    },
+    "C:known_risks_provider_crosstalk": {
+      "status": "VERIFIED",
+      "claim": "Provider crosstalk can leak data between sessions; requires cryptographic isolation",
+      "evidence": ["I_788"],
+      "security_impact": "Privacy breach, trust violation",
+      "required_fixes": ["P1:provider_session_binding"]
+    },
+    "C:whatsapp_pairing_safety_risk": {
+      "status": "VERIFIED",
+      "claim": "WhatsApp pairing has caused unintended outbound messages; requires safety controls",
+      "evidence": ["I_834", "E_DOCS_WHATSAPP"],
+      "required_controls": [
+        "Read-only pairing mode",
+        "Explicit allowlists",
+        "First-send confirmation"
+      ]
+    },
+    "C:gateway_crash_on_network_failures": {
+      "status": "VERIFIED",
+      "claim": "Gateway crashes on transient network failures making it unsuitable for production without fixes",
+      "evidence": ["I_2359", "I_2272", "I_2369"],
+      "impact": "CRITICAL - Service unavailable during brief network issues",
+      "required_fixes": ["P4:network_resilience"]
+    },
+    "C:resource_leak_problems": {
+      "status": "VERIFIED",
+      "claim": "Resource leaks (session locks, file handles) accumulate over time requiring manual intervention",
+      "evidence": ["I_2365", "I_1951", "I_1812"],
+      "impact": "HIGH - System becomes unusable, requires restart",
+      "required_fixes": ["P5:resource_leak_prevention"]
+    },
+    "C:message_loss_risk": {
+      "status": "VERIFIED",
+      "claim": "Messages can be lost during gateway restarts due to race conditions",
+      "evidence": ["I_1862", "I_1825"],
+      "impact": "CRITICAL - Violates data integrity requirements for production",
+      "required_fixes": ["P12:message_loss_prevention"]
+    },
+    "C:enterprise_blockers_exist": {
+      "status": "VERIFIED",
+      "claim": "Multiple critical blockers prevent enterprise adoption",
+      "evidence": ["I_1568", "I_1797", "I_2332", "I_1950"],
+      "blockers": [
+        "No PostgreSQL support",
+        "Copilot Enterprise broken",
+        "Azure OpenAI broken",
+        "No headless deployment"
+      ],
+      "required_fixes": ["P7", "P9", "P10"]
+    },
+    "C:production_readiness_score": {
+      "status": "VERIFIED",
+      "claim": "Current production readiness score is 4/10 with 12 critical blockers",
+      "evidence": ["E_REPO", "production_readiness_assessment"],
+      "supporting_data": {
+        "total_issues": 412,
+        "critical": 12,
+        "high": 45,
+        "stability_score": "2/10",
+        "enterprise_readiness": "NOT READY"
+      }
+    }
+  }
+}
